@@ -42,8 +42,8 @@ pattern(Predicate,[Pred|Body],[tag:list_recursion|Rest]):-
     pattern(Predicate,Body,Rest).
 %recursion pattern- vector input, output by side-effect -- generalized
 pattern(Predicate,[Pred|Body],[tag:list_recursion|Rest]):-
-    functor(Predicate,Name,1),
-    functor(Pred,Name,1),
+    functor(Predicate,Name,Arity),
+    functor(Pred,Name,Arity),
     Predicate=..[Name|Args],
     member([Var1|Var2],Args),
     var(Var1),
@@ -52,7 +52,8 @@ pattern(Predicate,[Pred|Body],[tag:list_recursion|Rest]):-
     Pred=..[Name|Args2],
     nth0(Index,Args2,Var3),
     var(Var3),
-    nth0(Index,Args3,[]),
+    length(Args,Length),
+    list_of_empty_elements(Length,Index,[],Args3),
     New_Predicate=..[Name|Args3],
     catch(New_Predicate,_,fail),%Prevent errors from calling non-existant predicates
     pattern(Predicate,Body,Rest).
@@ -69,6 +70,21 @@ predicates_can_fail([Pred|Body],[tag:canfail,Pred|Rest]):-
 predicates_can_fail([Pred|Body],[Pred|Rest]):-
     predicates_can_fail(Body,Rest).
 predicates_can_fail([],[]).
+
+% List is a list with length and all of its elements as variables except
+% for element on index (counting starts at 0)
+list_of_empty_elements(Length,Index,Element,List):-
+  list_of_empty_elements(Length,Index,Element,0,List).
+list_of_empty_elements(Length,Index,Element,Count,[_|Rest]):-
+    Count<Length,
+    Count\=Index,
+    Up is Count+1,
+    list_of_empty_elements(Length,Index,Element,Up,Rest).
+list_of_empty_elements(Length,Index,Element,Index,[Element|Rest]):-
+    Up is Index+1,
+    list_of_empty_elements(Length,Index,Element,Up,Rest).
+list_of_empty_elements(Length,_,_,Length,[]).
+
 
 %Get Prolog programming patterns in predicate
 get_patterns(Name/Arity,Patterns):-
@@ -88,9 +104,9 @@ get_patterns_from_rules([],[]).
 process_recursion(Pattern,[tag:for_loop,element|Pattern_without]):-
     member(tag:list_recursion,Pattern),
     delete(Pattern, tag:list_recursion, Pattern_without).
-process_recursion(Pattern,Pattern). 
+process_recursion(Pattern,Pattern).
 
-%Processes patterns in list of patterns 
+%Processes patterns in list of patterns
 process_patterns_list([Pattern|Rest],[Processed|Processed_Rest]):-
     get_variables_dictionary(Pattern,VarsDic),
     process_patterns(Pattern,VarsDic,Processed),!,
@@ -190,7 +206,7 @@ repeat_pattern_to_text([Pred|Rest],[Pred|TextRest]):-
     repeat_pattern_to_text(Rest,TextRest).
 repeat_pattern_to_text([],[break]).
 
-%Process write/1 in all lists into prettier text 
+%Process write/1 in all lists into prettier text
 process_writes_in_list([Pattern|Rest],[Processed|ProcessedRest]):-
     process_writes(Pattern,Processed),
     process_writes_in_list(Rest,ProcessedRest),!.
@@ -206,7 +222,8 @@ process_writes([],[]).
 
 %Formats writes in a row into prettier text
 process_writes_in_a_row([write(X)|Rest],Args,Text):-
-    process_writes_in_a_row(Rest,[X|Args],Text). 
+    append(Args,[X],NewArgs),
+    process_writes_in_a_row(Rest,NewArgs,Text).
 process_writes_in_a_row([nl|_],Args,Text):-
     atomic_list_concat(Args,' ',ArgsAtom),
     atomic_concat('print_line(', ArgsAtom, Atom1),
