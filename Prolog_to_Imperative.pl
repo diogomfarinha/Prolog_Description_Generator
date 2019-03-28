@@ -30,8 +30,8 @@ pattern(_,[repeat|Body],[tag:repeat_loop|Rest]):-
     predicates_can_fail(Body,Rest).
 %recursion pattern
 pattern(Predicate,[Pred|Body],[tag:recursion,Pred|Rest]):-
-    functor(Predicate,Name,_),
-    functor(Pred,Name,_),
+    functor(Predicate,Name,Arity),
+    functor(Pred,Name,Arity),
     pattern(Predicate,Body,Rest).
 %no patttern
 pattern(_,[fail|_],[]).
@@ -50,15 +50,15 @@ predicates_can_fail([],[]).
 %Get Prolog programming patterns in predicate
 get_patterns(Name/Arity,Patterns):-
     get_predicate(Name/Arity,Pred),
-    get_rules(Pred,List_of_Rules),
-    get_patterns_from_rules(Pred,List_of_Rules,Patterns),!.
+    get_all_rules_with_term(Pred,List_of_Rules),
+    get_patterns_from_rules(List_of_Rules,Patterns),!.
 
 %Get Prolog programming patterns in list of rules
-get_patterns_from_rules(Pred,[Rule|Rest],Patterns):-
+get_patterns_from_rules([[Pred,Rule]|Rest],Patterns):-
     pattern(Pred,Rule,Pattern_from_Rule),!,
-    get_patterns_from_rules(Pred,Rest,Patterns_from_Rest),
+    get_patterns_from_rules(Rest,Patterns_from_Rest),
     append([Pattern_from_Rule],Patterns_from_Rest,Patterns).
-get_patterns_from_rules(_,[],[]).
+get_patterns_from_rules([],[]).
 
 %Processes patterns in list of patterns 
 process_patterns_list([Pattern|Rest],[Processed|Processed_Rest]):-
@@ -76,8 +76,8 @@ get_variables_dictionary(Preds,VarsDic):-
 %Second argument is list of all variables in 1st argument
 get_variables_list([Head|Rest],VarsList):-
      term_variables(Head,Vars),
-     append(Vars,VarsRest,VarsList),
-     get_variables_list(Rest,VarsRest).
+     get_variables_list(Rest,VarsRest),
+     append(Vars,VarsRest,VarsList).
 get_variables_list([],[]).
 
 %Creates list of atom:variable pairs from variables in list

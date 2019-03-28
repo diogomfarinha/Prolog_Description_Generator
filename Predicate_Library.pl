@@ -22,7 +22,7 @@ conjunction_to_list(T, [T]).
 is_list_with_boolean([true]).
 is_list_with_boolean([false]).
 
-%Returns rule from Predicate in list format
+%Rule is list correspoding to the rule's body
 rule(Predicate,Rule):-
     clause(Predicate,Body),
     conjunction_to_list(Body,Rule),
@@ -41,16 +41,27 @@ count_member(Element,[Head|Rest],Count):-
     count_member(Rest,Element,Count).
 count_member(_,[],0).
 
-%Gets all rules for a predicate in list format. List contains lists of predicates, each list represents a different rule.
-get_rules(Pred,_):-
-    assert(rules(Pred,[])),
+%Gets all rules for a predicate in list format. List contains lists with rule term and rule body (in list format)
+get_all_rules_with_term(Pred,_):-
+    assert(list_of_rules([])),
     rule(Pred,Rule),
-    retract(rules(Pred,List_of_Rules)),
-    append(List_of_Rules,[Rule],New_List_of_Rules),
-    assert(rules(Pred,New_List_of_Rules)),
+    retract(list_of_rules(List)),
+    append(List,[[Pred,Rule]],New_List),
+    assert(list_of_rules(New_List)),
     fail.
-get_rules(Pred,List_of_Rules):-
-    retract(rules(Pred,List_of_Rules)).
+get_all_rules_with_term(_,List):-
+    retract(list_of_rules(List)).
+
+%Gets all rules for a predicate in list format. List contains lists with rule term and rule body (in list format)
+get_all_rules(Pred,_):-
+    assert(list_of_rules([])),
+    rule(Pred,Rule),
+    retract(list_of_rules(List)),
+    append(List,[Rule],New_List),
+    assert(list_of_rules(New_List)),
+    fail.
+get_all_rules(_,List):-
+    retract(list_of_rules(List)).
 
 %Predicate has more than one solution
 predicate_has_more_solutions(Pred):-
@@ -65,7 +76,7 @@ predicate_has_more_solutions(member(X,List)):-
 predicate_has_more_solutions(Pred):-
     \+predicate_property(Pred,built_in),
     \+predicate_property(Pred,imported_from(lists)),
-    get_rules(Pred,List_of_Rules),
+    get_all_rules(Pred,List_of_Rules),
     list_has_more_solutions(List_of_Rules,[Pred]),!.
 
 %Predicate has more than one solution. Contains list of iterated predicates to prevent infite loops with recursive predicates
@@ -82,7 +93,7 @@ predicate_has_more_solutions(Pred,List_of_Predicates):-
     \+predicate_property(Pred,built_in),
     \+predicate_property(Pred,imported_from(lists)),
     \+member(Pred,List_of_Predicates),
-    get_rules(Pred,List_of_Rules),
+    get_all_rules(Pred,List_of_Rules),
     append(List_of_Predicates,[Pred],New_List_of_Predicates),
     list_has_more_solutions(List_of_Rules,New_List_of_Predicates),!.
 
@@ -153,7 +164,7 @@ predicate_can_fail(member(_,_)).
 predicate_can_fail(Pred):-
     \+predicate_property(Pred,built_in),
     \+predicate_property(Pred,imported_from(lists)),
-    get_rules(Pred,List_of_Rules),
+    get_all_rules(Pred,List_of_Rules),
     list_can_fail(List_of_Rules,[Pred]),!.
 
 %Predicate can fail when called. Contains list of iterated predicates to prevent infite loops with recursive predicates
@@ -164,7 +175,7 @@ predicate_can_fail(Pred,List_of_Predicates):-
     \+predicate_property(Pred,built_in),
     \+predicate_property(Pred,imported_from(lists)),
     \+member(Pred,List_of_Predicates),
-    get_rules(Pred,List_of_Rules),
+    get_all_rules(Pred,List_of_Rules),
     append(List_of_Predicates,[Pred],New_List_of_Predicates),
     list_can_fail(List_of_Rules,New_List_of_Predicates),!.
 
