@@ -61,6 +61,11 @@ printList([Head|Rest]):-
 	printList(Rest).
 printList([]).
 
+printList2([Head|Rest],2):-
+	write(Head),write(2),nl,
+	printList2(Rest,2).
+printList2([],_).
+
 testfail(P):-
     status(_,_),
     write(P),

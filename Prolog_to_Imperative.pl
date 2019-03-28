@@ -28,10 +28,33 @@ pattern(Predicate,[Pred|Body],[tag:for_loop,Pred|Rest]):-
 %repeat pattern
 pattern(_,[repeat|Body],[tag:repeat_loop|Rest]):-
     predicates_can_fail(Body,Rest).
-%recursion pattern
-pattern(Predicate,[Pred|Body],[tag:recursion,Pred|Rest]):-
-    functor(Predicate,Name,Arity),
-    functor(Pred,Name,Arity),
+%recursion pattern- vector input, output by side-effect
+pattern(Predicate,[Pred|Body],[tag:list_recursion|Rest]):-
+    functor(Predicate,Name,1),
+    functor(Pred,Name,1),
+    Predicate=..[Name,[Var1|Var2]],
+    var(Var1),
+    var(Var2),
+    Pred=..[Name,Var3],
+    var(Var3),
+    New_Predicate=..[Name,[]],
+    catch(New_Predicate,_,fail),%Prevent errors from calling non-existant predicates
+    pattern(Predicate,Body,Rest).
+%recursion pattern- vector input, output by side-effect -- generalized
+pattern(Predicate,[Pred|Body],[tag:list_recursion|Rest]):-
+    functor(Predicate,Name,1),
+    functor(Pred,Name,1),
+    Predicate=..[Name|Args],
+    member([Var1|Var2],Args),
+    var(Var1),
+    var(Var2),
+    nth0(Index, Args,[Var1|Var2]),
+    Pred=..[Name|Args2],
+    nth0(Index,Args2,Var3),
+    var(Var3),
+    nth0(Index,Args3,[]),
+    New_Predicate=..[Name|Args3],
+    catch(New_Predicate,_,fail),%Prevent errors from calling non-existant predicates
     pattern(Predicate,Body,Rest).
 %no patttern
 pattern(_,[fail|_],[]).
@@ -56,14 +79,21 @@ get_patterns(Name/Arity,Patterns):-
 %Get Prolog programming patterns in list of rules
 get_patterns_from_rules([[Pred,Rule]|Rest],Patterns):-
     pattern(Pred,Rule,Pattern_from_Rule),!,
+    process_recursion(Pattern_from_Rule,Processed_Pattern),!,
     get_patterns_from_rules(Rest,Patterns_from_Rest),
-    append([Pattern_from_Rule],Patterns_from_Rest,Patterns).
+    append([Processed_Pattern],Patterns_from_Rest,Patterns).
 get_patterns_from_rules([],[]).
+
+%Process recursion tags into common tags
+process_recursion(Pattern,[tag:for_loop,element|Pattern_without]):-
+    member(tag:list_recursion,Pattern),
+    delete(Pattern, tag:list_recursion, Pattern_without).
+process_recursion(Pattern,Pattern). 
 
 %Processes patterns in list of patterns 
 process_patterns_list([Pattern|Rest],[Processed|Processed_Rest]):-
     get_variables_dictionary(Pattern,VarsDic),
-    process_patterns(Pattern,VarsDic,Processed),
+    process_patterns(Pattern,VarsDic,Processed),!,
     process_patterns_list(Rest,Processed_Rest),!.
 process_patterns_list([],[]).
 
@@ -88,6 +118,8 @@ create_variables_dictionary([Head|Rest],[Head:Var|Dic],List):-
 create_variables_dictionary([],[],_).
 
 %Processes pattern list
+process_patterns([tag:for_loop,element|Rest],VarsDic,[tag:for_loop,[element],list|ProcessedRest]):-
+    process_patterns(Rest,VarsDic,ProcessedRest).
 process_patterns([tag:for_loop,Pred|Rest],VarsDic,[tag:for_loop,TransArgs,TransPred|ProcessedRest]):-
     Pred=..[Name|Args],
     translate_variables(Args,VarsDic,TransArgs),
