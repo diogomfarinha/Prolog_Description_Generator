@@ -61,10 +61,19 @@ printList([Head|Rest]):-
 	printList(Rest).
 printList([]).
 
-printList2([Head|Rest],2):-
-	write(Head),write(2),nl,
-	printList2(Rest,2).
+printList2([Head|Rest],X):-
+	write(Head),write(X),nl,
+	printList2(Rest,X).
 printList2([],_).
+
+printList3(X,[Head|Rest],Y):-
+	write(X),write(Head),write(Y),nl,
+	printList3(X,Rest,Y).
+printList3(_,[],_).
+
+printList4([Head|Rest]):-
+	write(Head),nl,
+	printList(Rest).
 
 testfail(P):-
     status(_,_),

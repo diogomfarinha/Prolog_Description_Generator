@@ -29,26 +29,23 @@ pattern(Predicate,[Pred|Body],[tag:for_loop,Pred|Rest]):-
 pattern(_,[repeat|Body],[tag:repeat_loop|Rest]):-
     predicates_can_fail(Body,Rest).
 %recursion pattern- vector input, output by side-effect
-pattern(Predicate,[Pred|Body],[tag:list_recursion|Rest]):-
-    functor(Predicate,Name,1),
-    functor(Pred,Name,1),
-    Predicate=..[Name,[Var1|Var2]],
-    var(Var1),
-    var(Var2),
-    Pred=..[Name,Var3],
-    var(Var3),
-    New_Predicate=..[Name,[]],
-    catch(New_Predicate,_,fail),%Prevent errors from calling non-existant predicates
-    pattern(Predicate,Body,Rest).
+% pattern(Predicate,[Pred|Body],[tag:list_recursion|Rest]):-
+%     functor(Predicate,Name,1),
+%     functor(Pred,Name,1),
+%     Predicate=..[Name,[Var1|Var2]],
+%     var(Var1),
+%     var(Var2),
+%     Pred=..[Name,Var3],
+%     var(Var3),
+%     New_Predicate=..[Name,[]],
+%     catch(New_Predicate,_,fail),%Prevent errors from calling non-existant predicates
+%     pattern(Predicate,Body,Rest).
 %recursion pattern- vector input, output by side-effect -- generalized
 pattern(Predicate,[Pred|Body],[tag:list_recursion|Rest]):-
     functor(Predicate,Name,Arity),
     functor(Pred,Name,Arity),
     Predicate=..[Name|Args],
-    member([Var1|Var2],Args),
-    var(Var1),
-    var(Var2),
-    nth0(Index, Args,[Var1|Var2]),
+    list_contains_list_argument(Args,Index),
     Pred=..[Name|Args2],
     nth0(Index,Args2,Var3),
     var(Var3),
@@ -70,6 +67,16 @@ predicates_can_fail([Pred|Body],[tag:canfail,Pred|Rest]):-
 predicates_can_fail([Pred|Body],[Pred|Rest]):-
     predicates_can_fail(Body,Rest).
 predicates_can_fail([],[]).
+
+%Finds argument with format [Head|Rest] in list with Index. Prevents bugs member/2 and nth0/3 would otherwise cause when dealing with variables.
+list_contains_list_argument(List,Index):-
+    list_contains_list_argument(List,Index,0).
+list_contains_list_argument([Head|_],Index,Index):-
+    \+var(Head),
+    Head=[_|_].
+list_contains_list_argument([_|Rest],Index,Count):-
+    Up is Count+1,
+    list_contains_list_argument(Rest,Index,Up).
 
 % List is a list with length and all of its elements as variables except
 % for element on index (counting starts at 0)
