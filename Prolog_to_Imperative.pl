@@ -1,22 +1,17 @@
 :- ensure_loaded('Predicate_Library.pl').
 
-%Converts and prints Prolog programs into imperative-style descriptions. Pred is in format Name/Arity
+%Converts and prints Prolog programs into imperative-style descriptions. Pred is in Name/Arity format
 prolog_to_imperative(Pred):-
     prolog_to_imperative(Pred,java).
 prolog_to_imperative(Pred/Arity,java):-
     get_patterns(Pred/Arity,HeadArgs,Patterns),
-    nl,write(patterns:Patterns),nl,
+    nl,write(Patterns),nl,
     eliminate_iteration_redundancy(Patterns,Clean_Patterns),
-    write(clean_patterns:Clean_Patterns),nl,
     process_patterns_list(HeadArgs,ProcessedHeadArgs,Clean_Patterns,Processed_Patterns),
-    write(processed_patterns:Processed_Patterns),nl,
     patterns_to_text(Processed_Patterns,Text_List),
-    write(text_list:Text_List),nl,
     process_writes_in_list(Text_List,Pretty_Text),
-    write(pretty_text:Pretty_Text),nl,
     process_iteration_coherence(Pretty_Text,Coherent_Text),!,
-    write(coherent_text:Coherent_Text),nl,
-    write(processed_head_args:ProcessedHeadArgs),nl,nl,
+    write(Coherent_Text),nl,nl,
     process_predicate_head(Pred,ProcessedHeadArgs,Head),
     write(Head),write('{'),nl,
     print_formatted_predicate(java,Coherent_Text),
@@ -27,9 +22,23 @@ prolog_to_imperative(Pred/Arity,python):-
     process_patterns_list(HeadArgs,ProcessedHeadArgs,Clean_Patterns,Processed_Patterns),
     patterns_to_text(Processed_Patterns,Text_List),
     process_writes_in_list(Text_List,Pretty_Text),
+    process_iteration_coherence(Pretty_Text,Coherent_Text),!,
     process_predicate_head(Pred,ProcessedHeadArgs,Head),
     write(Head),write(':'),nl,
-    print_formatted_predicate(python,Pretty_Text),!.
+    print_formatted_predicate(python,Coherent_Text),!.
+
+%Converts Prolog programs into imperative-style descriptions
+prolog_to_imperative_info(Pred/Arity,ProcessedHeadArgs,Coherent_Text):-
+    get_patterns(Pred/Arity,HeadArgs,Patterns),
+    eliminate_iteration_redundancy(Patterns,Clean_Patterns),
+    process_patterns_list(HeadArgs,ProcessedHeadArgs,Clean_Patterns,Processed_Patterns),
+    patterns_to_text(Processed_Patterns,Text_List),
+    process_writes_in_list(Text_List,Pretty_Text),
+    process_iteration_coherence(Pretty_Text,Coherent_Text),!,
+    process_predicate_head(Pred,ProcessedHeadArgs,Head),
+    write(Head),write('{'),nl,
+    print_formatted_predicate(java,Coherent_Text),
+    write('}'),!.
 
 %Get Prolog programming patterns in predicate
 get_patterns(Name/Arity,HeadArgs,Patterns):-
@@ -250,35 +259,25 @@ pattern_to_text([Predicate|Rest],[Predicate|TextRest]):-
     pattern_to_text(Rest,TextRest).
 pattern_to_text([],[]).
 
-%Describe a loop for iterating through a list 
-iter_loop_description(Elements,Description):-
+%Describe a loop for iterating through a list
+iter_loop_description(Elements,for(Text)):-
     atomic_list_concat(Elements,',', AtomElements),
-    atom_concat('for(', AtomElements, Text1),
-    atom_concat(Text1,' in list)',Description).
+    atom_concat(AtomElements,' in list',Text).
 
 %Describe a for loop with arguments and predicate
-for_loop_description(Arguments,Predicate,Description):-
+for_loop_description(Arguments,Predicate,for(Text2:Predicate)):-
     atomic_list_concat(Arguments,', ', AtomArgs),
-    term_to_atom(Predicate,AtomPred),
-    atom_concat('for((', AtomArgs, Text1),
-    atom_concat(Text1, '):', Text2),
-    atom_concat(Text2, AtomPred, Text3),
-    atom_concat(Text3,')',Description).
+    atom_concat('(',AtomArgs,Text1),
+    atom_concat(Text1,')',Text2).
 
 %Describe an if clause with condition
-if_clause_description(Condition,Description):-
+if_clause_description(Condition,if(Condition)).
+if_clause_description(not,Condition,if(Text)):-
     term_to_atom(Condition,AtomCon),
-    atom_concat('if(', AtomCon, Text1),
-    atom_concat(Text1,')',Description).
-if_clause_description(not,Condition,Description):-
-    term_to_atom(Condition,AtomCon),
-    atom_concat('if(not ', AtomCon, Text1),
-    atom_concat(Text1,')',Description).
+    atom_concat('not ', AtomCon, Text).
 
 %Describe a while loop with Variables
-while_loop_description(Condition,Description):-
-    atom_concat('while(', Condition, Text1),
-    atom_concat(Text1, ')', Description).
+while_loop_description(Condition,while(Condition)).
 
 %Process predicates in a repeat pattern to text
 repeat_pattern_to_text([tag:canfail,Pred|Rest],[watch_execution(Pred), 'if successful',tag:indent|TextRest]):-
@@ -331,7 +330,7 @@ process_iteration_coherence([Head|Rest],[Coherent]):-
     add_to_matrix(Rest,tag:unindent,NewRest),
     flatten([ListWithout|NewRest],Coherent).
 process_iteration_coherence(List,List).
-    
+
 %Head is predicate head in atom format
 process_predicate_head(Name,HeadArgs,Head):-
     atomic_concat(Name,'(', Atom1),
@@ -351,7 +350,7 @@ print_formatted(java,List,Indentation):-
 print_formatted(python,List,Indentation):-
     print_python_style(List,Indentation),!.
 
-%Writes text in a java-like style of formatting. 
+%Writes text in a java-like style of formatting.
 print_java_style([Head,tag:indent|Rest],Indentation,BracketCount):-
     tab(Indentation),
     write(Head),write('{'),
@@ -372,8 +371,7 @@ print_java_style([tag:unindent|Rest],Indentation,BracketCount):-
     print_java_style(Rest,NewIndentation,NewCount).
 print_java_style([tag:unindent|Rest],Indentation,BracketCount):-
     NewIndentation is Indentation-5,
-    NewCount is BracketCount-1,
-    print_java_style(Rest,NewIndentation,NewCount).
+    print_java_style(Rest,NewIndentation,BracketCount).
 print_java_style([Head|Rest],Indentation,Count):-
     tab(Indentation),
     write(Head),

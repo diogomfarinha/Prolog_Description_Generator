@@ -60,6 +60,14 @@ removeOddNumbers([N|Rest],List):-
     removeOddNumbers(Rest,List).
 removeOddNumbers([],[]).
 
+removeNumbers([N|Rest],[N|List]):-
+    N>2,
+    removeNumbers(Rest,List).
+removeNumbers([N|Rest],List):-
+    N=<2,
+    removeNumbers(Rest,List).
+removeNumbers([],[]).
+
 student(rui).
 
 print_all_students():-

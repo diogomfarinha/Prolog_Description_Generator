@@ -146,7 +146,7 @@ get_all_args([Pred|Rest],[Args|ArgsRest]):-
 get_all_args([],[]).
 
 %Predicate is a math equation
-%is_math(_=_).
+is_math(_=_).
 is_math(_==_).
 is_math(_\=_).
 is_math(_<_).
