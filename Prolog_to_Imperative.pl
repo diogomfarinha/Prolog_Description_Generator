@@ -58,14 +58,15 @@ pattern(_,[repeat|Body],[tag:repeat_loop|Rest]):-
 %     catch(New_Predicate,_,fail),%Prevent errors from calling non-existent predicates
 %     pattern(Predicate,Body,Rest).
 %recursion pattern- vector input, output by side-effect -- generalized
-pattern(Predicate,[Pred|Body],[tag:iter_loop|Rest]):-
+pattern(Predicate,[Pred|Body],[tag:iter_loop(Head)|Rest]):-
     functor(Predicate,Name,Arity),
     functor(Pred,Name,Arity),
     Predicate=..[Name|Args],
     list_contains_list_argument(Args,Index),
+    nth0(Index,Args,[Head|_]),
     Pred=..[Name|Args2],
-    nth0(Index,Args2,Var3),
-    var(Var3),
+    nth0(Index,Args2,Var),
+    var(Var),
     length(Args,Length),
     list_of_empty_elements(Length,Index,[],Args3),
     New_Predicate=..[Name|Args3],
@@ -155,7 +156,8 @@ translate_head_args(HeadArgs,VarsDic,TransArgs):-
     translate_variables(NewArgs,VarsDic,TransArgs).
 
 %Processes pattern list
-process_patterns([tag:iter_loop|Rest],VarsDic,[tag:iter_loop|ProcessedRest]):-
+process_patterns([tag:iter_loop(Var)|Rest],VarsDic,[tag:iter_loop(TransVar)|ProcessedRest]):-
+    translate_variables([Var],VarsDic,TransVar),
     process_patterns(Rest,VarsDic,ProcessedRest).
 process_patterns([tag:for_loop,Pred|Rest],VarsDic,[tag:for_loop,TransArgs,TransPred|ProcessedRest]):-
     Pred=..[Name|Args],
@@ -172,9 +174,9 @@ process_patterns([Pred|Rest],VarsDic,[TransPred|ProcessedRest]):-
 process_patterns([],_,[]).
 
 %Make recursive tag the first member of pattern for coherence
-process_recursion(Pattern,[tag:iter_loop|Pattern_without]):-
-    member(tag:iter_loop,Pattern),
-    delete(Pattern, tag:iter_loop, Pattern_without).
+process_recursion(Pattern,[tag:iter_loop(Element)|Pattern_without]):-
+    member(tag:iter_loop(Element),Pattern),
+    delete(Pattern, tag:iter_loop(Element), Pattern_without).
 process_recursion(Pattern,Pattern).
 
 %Translate variables in list with dictionary
@@ -201,8 +203,8 @@ patterns_to_text([Pattern|Rest],[Text|TextRest]):-
 patterns_to_text([],[]).
 
 %Process processed patterns into text
-pattern_to_text([tag:iter_loop|Rest],[Text,tag:indent|TextRest]):-
-    iter_loop_description(Text),
+pattern_to_text([tag:iter_loop(Elements)|Rest],[Text,tag:indent|TextRest]):-
+    iter_loop_description(Elements,Text),
     pattern_to_text(Rest,TextRest).
 pattern_to_text([tag:for_loop,Args,Pred|Rest],[Text,tag:indent|TextRest]):-
     for_loop_description(Args,Pred,Text),
@@ -216,13 +218,16 @@ pattern_to_text([Predicate|Rest],[Predicate|TextRest]):-
 pattern_to_text([],[]).
 
 %Describe a loop for iterating through a list 
-iter_loop_description('for element in list').
+iter_loop_description(Elements,Description):-
+    atomic_list_concat(Elements,',', AtomElements),
+    atom_concat('for(', AtomElements, Text1),
+    atom_concat(Text1,' in list)',Description).
 
 %Describe a for loop with arguments and predicate
 for_loop_description(Arguments,Predicate,Description):-
     atomic_list_concat(Arguments,', ', AtomArgs),
     term_to_atom(Predicate,AtomPred),
-    atom_concat('for ((', AtomArgs, Text1),
+    atom_concat('for((', AtomArgs, Text1),
     atom_concat(Text1, '):', Text2),
     atom_concat(Text2, AtomPred, Text3),
     atom_concat(Text3,')',Description).
