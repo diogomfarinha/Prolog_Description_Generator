@@ -191,3 +191,17 @@ list_can_fail([Rule|_],List_of_Predicates):-
 list_can_fail([_|Rest],List_of_Predicates):-
     list_can_fail(Rest,List_of_Predicates).
 
+%Switch list element on index
+switch_index(Index,List,Element,NewList):-
+    switch_index(0,Index,List,Element,NewList).
+switch_index(Count,Index,[Head|Rest],Element,[Head|NewRest]):-
+    Count\=Index,
+    CountUp is Count+1,
+    switch_index(CountUp,Index,Rest,Element,NewRest).
+switch_index(Index,Index,[_|Rest],Element,[Element|Rest]).
+switch_index(_,_,[],_,[]).
+
+%Get element from list of lists according to indexes
+get_element_from_matrix(Index1,Index2,List_of_Lists,Element):-
+    nth0(Index1,List_of_Lists,List),
+    nth0(Index2,List,Element).

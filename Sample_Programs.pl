@@ -39,6 +39,11 @@ remove_from_list(X,[Head|Rest],[Head|List]):-
     remove_from_list(X,Rest,List).
 remove_from_list(_,[],[]).
 
+printx(X):-
+    write(X),
+    fail.
+printx(X):-
+    write(X).
 
 removeOddNumbers([N|Rest],[N|List]):-
     0 is N mod 2,
