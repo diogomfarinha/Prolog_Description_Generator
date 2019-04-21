@@ -19,6 +19,13 @@ age(anna,24).
 age(john,27).
 age(michael,54).
 
+displayOld:-
+    age(Person,Age),
+    Age>80,
+    write(Person),write(' is '),write(Age),nl,
+    fail.
+displayOld.
+
 country(anna,usa).
 country(john,portugal).
 country(michael,spain).
@@ -47,10 +54,10 @@ printx(X):-
 
 removeOddNumbers([N|Rest],[N|List]):-
     0 is N mod 2,
-    removeOddNumbers(Rest,List),!.
+    removeOddNumbers(Rest,List).
 removeOddNumbers([N|Rest],List):-
     \+(0 is N mod 2),
-    removeOddNumbers(Rest,List),!.
+    removeOddNumbers(Rest,List).
 removeOddNumbers([],[]).
 
 student(rui).

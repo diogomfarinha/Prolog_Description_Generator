@@ -5,11 +5,18 @@ prolog_to_imperative(Pred):-
     prolog_to_imperative(Pred,java).
 prolog_to_imperative(Pred/Arity,java):-
     get_patterns(Pred/Arity,HeadArgs,Patterns),
+    nl,write(patterns:Patterns),nl,
     eliminate_iteration_redundancy(Patterns,Clean_Patterns),
+    write(clean_patterns:Clean_Patterns),nl,
     process_patterns_list(HeadArgs,ProcessedHeadArgs,Clean_Patterns,Processed_Patterns),
+    write(processed_patterns:Processed_Patterns),nl,
     patterns_to_text(Processed_Patterns,Text_List),
+    write(text_list:Text_List),nl,
     process_writes_in_list(Text_List,Pretty_Text),
-    process_iteration_coherence(Pretty_Text,Coherent_Text),
+    write(pretty_text:Pretty_Text),nl,
+    process_iteration_coherence(Pretty_Text,Coherent_Text),!,
+    write(coherent_text:Coherent_Text),nl,
+    write(processed_head_args:ProcessedHeadArgs),nl,nl,
     process_predicate_head(Pred,ProcessedHeadArgs,Head),
     write(Head),write('{'),nl,
     print_formatted_predicate(java,Coherent_Text),
@@ -201,6 +208,10 @@ translate_variables([Var|Rest],VarsDic,[Trans|TransRest]):-
     var(Var),
     get_translation(Var,VarsDic,Trans),
     translate_variables(Rest,VarsDic,TransRest).
+translate_variables([Head|Rest],VarsDic,[list2|TransRest]):-
+    \+var(Head),
+    Head=[_|_],
+    translate_variables(Rest,VarsDic,TransRest).
 translate_variables([Atom|Rest],VarsDic,[Atom|TransRest]):-
     \+var(Atom),
     translate_variables(Rest,VarsDic,TransRest).
@@ -211,7 +222,7 @@ get_translation(Var,[Head:Translated|_],Translated):-
     Var==Head.
 get_translation(Var,[_|Rest],Translated):-
     get_translation(Var,Rest,Translated).
-get_translation(X,[],X).
+get_translation(_,[],var).
 
 %Processes list of processed patterns into list of lists with text and terms
 patterns_to_text([Pattern|Rest],[Text|TextRest]):-
@@ -313,12 +324,13 @@ process_writes_skip([Pred|Rest],[Pred|ProcessedRest]):-
 process_writes_skip([],[]).
 
 %Assure coherence in indentation so that the descriptions stay inside
-%the main iteration loop 
+%the main iteration loop. Does nothing if iteration is not present
 process_iteration_coherence([Head|Rest],[Coherent]):-
     member(tag:iter_loop,Head),
     delete(Head,tag:iter_loop, ListWithout),
     add_to_matrix(Rest,tag:unindent,NewRest),
     flatten([ListWithout|NewRest],Coherent).
+process_iteration_coherence(List,List).
     
 %Head is predicate head in atom format
 process_predicate_head(Name,HeadArgs,Head):-
@@ -354,7 +366,12 @@ print_java_style([tag:indent|Rest],Indentation,BracketCount):-
 print_java_style([tag:unindent|Rest],Indentation,BracketCount):-
     NewIndentation is Indentation-5,
     tab(NewIndentation),
+    BracketCount>=2,
     write('}'),nl,
+    NewCount is BracketCount-1,
+    print_java_style(Rest,NewIndentation,NewCount).
+print_java_style([tag:unindent|Rest],Indentation,BracketCount):-
+    NewIndentation is Indentation-5,
     NewCount is BracketCount-1,
     print_java_style(Rest,NewIndentation,NewCount).
 print_java_style([Head|Rest],Indentation,Count):-
