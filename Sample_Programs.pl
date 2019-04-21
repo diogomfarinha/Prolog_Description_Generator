@@ -97,7 +97,7 @@ printList4([Head|Rest]):-
 
 findElements(N,[Head|Rest]):-
     Head==N,
-    write('Got it!'),
+    write('Found it!'),
     findElements(N,Rest).
 findElements(N,[Head|Rest]):-
     \+Head==N,
