@@ -5,21 +5,24 @@ prolog_to_imperative(Pred):-
     prolog_to_imperative(Pred,java).
 prolog_to_imperative(Pred/Arity,java):-
     get_patterns(Pred/Arity,HeadArgs,Patterns),
-    process_patterns_list(HeadArgs,ProcessedHeadArgs,Patterns,Processed_Patterns),
+    eliminate_iteration_redundancy(Patterns,Clean_Patterns),
+    process_patterns_list(HeadArgs,ProcessedHeadArgs,Clean_Patterns,Processed_Patterns),
     patterns_to_text(Processed_Patterns,Text_List),
     process_writes_in_list(Text_List,Pretty_Text),
+    process_iteration_coherence(Pretty_Text,Coherent_Text),
     process_predicate_head(Pred,ProcessedHeadArgs,Head),
     write(Head),write('{'),nl,
-    print_formatted_predicate(java,Pretty_Text),
-    write('}').
+    print_formatted_predicate(java,Coherent_Text),
+    write('}'),!.
 prolog_to_imperative(Pred/Arity,python):-
     get_patterns(Pred/Arity,HeadArgs,Patterns),
-    process_patterns_list(HeadArgs,ProcessedHeadArgs,Patterns,Processed_Patterns),
+    eliminate_iteration_redundancy(Patterns,Clean_Patterns),
+    process_patterns_list(HeadArgs,ProcessedHeadArgs,Clean_Patterns,Processed_Patterns),
     patterns_to_text(Processed_Patterns,Text_List),
     process_writes_in_list(Text_List,Pretty_Text),
     process_predicate_head(Pred,ProcessedHeadArgs,Head),
     write(Head),write(':'),nl,
-    print_formatted_predicate(python,Pretty_Text).
+    print_formatted_predicate(python,Pretty_Text),!.
 
 %Get Prolog programming patterns in predicate
 get_patterns(Name/Arity,HeadArgs,Patterns):-
@@ -46,18 +49,6 @@ pattern(Predicate,[Pred|Body],[tag:for_loop,Pred|Rest]):-
 pattern(_,[repeat|Body],[tag:repeat_loop|Rest]):-
     predicates_can_fail(Body,Rest).
 %recursion pattern- vector input, output by side-effect
-% pattern(Predicate,[Pred|Body],[tag:list_recursion|Rest]):-
-%     functor(Predicate,Name,1),
-%     functor(Pred,Name,1),
-%     Predicate=..[Name,[Var1|Var2]],
-%     var(Var1),
-%     var(Var2),
-%     Pred=..[Name,Var3],
-%     var(Var3),
-%     New_Predicate=..[Name,[]],
-%     catch(New_Predicate,_,fail),%Prevent errors from calling non-existent predicates
-%     pattern(Predicate,Body,Rest).
-%recursion pattern- vector input, output by side-effect -- generalized
 pattern(Predicate,[Pred|Body],[tag:iter_loop(Head)|Rest]):-
     functor(Predicate,Name,Arity),
     functor(Pred,Name,Arity),
@@ -71,6 +62,13 @@ pattern(Predicate,[Pred|Body],[tag:iter_loop(Head)|Rest]):-
     New_Predicate=..[Name|Args3],
     catch(New_Predicate,_,fail),%Prevent errors from calling non-existent predicates
     assert(recursion_argument(Index)),
+    pattern(Predicate,Body,Rest).
+%if pattern
+pattern(Predicate,[Pred|Body],[tag:if_clause,Pred|Rest]):-
+    is_math(Pred),
+    pattern(Predicate,Body,Rest).
+pattern(Predicate,[Pred|Body],[tag:if_not,Pred|Rest]):-
+    is_negation(Pred),
     pattern(Predicate,Body,Rest).
 %no patttern
 pattern(_,[fail|_],[]).
@@ -109,6 +107,16 @@ list_of_empty_elements(Length,Index,Element,Index,[Element|Rest]):-
     Up is Index+1,
     list_of_empty_elements(Length,Index,Element,Up,Rest).
 list_of_empty_elements(Length,_,_,Length,[]).
+
+%If list of lists contains iteration tag, insert all of them into main list,
+%so that they all belong to the same iteration cycle. Also deletes extra iteration tags
+eliminate_iteration_redundancy([Pattern|Rest],[Pattern|ProcessedRest]):-
+    member(tag:iter_loop(_),Pattern),
+    delete_from_matrix(tag:iter_loop(_),Rest,ProcessedRest).
+eliminate_iteration_redundancy([Pattern|Rest],[Pattern|ProcessedRest]):-
+    \+member(tag:iter_loop(_),Pattern),
+    eliminate_iteration_redundancy(Rest,ProcessedRest).
+eliminate_iteration_redundancy([],[]).
 
 %Processes patterns in list of patterns
 process_patterns_list(HeadArgs,TransArgs,[Pattern|Rest],[Processed2|Processed_Rest]):-
@@ -165,6 +173,16 @@ process_patterns([tag:for_loop,Pred|Rest],VarsDic,[tag:for_loop,TransArgs,TransP
     process_patterns(Rest,VarsDic,ProcessedRest).
 process_patterns([tag:repeat_loop|Rest],VarsDic,[tag:while_loop,true|ProcessedRest]):-
     process_patterns(Rest,VarsDic,ProcessedRest).
+process_patterns([tag:if_clause,Pred|Rest],VarsDic,[tag:if_clause,TransPred|ProcessedRest]):-
+    (Pred)=..[Name|Args],
+    translate_variables(Args,VarsDic,TransArgs),
+    TransPred=..[Name|TransArgs],
+    process_patterns(Rest,VarsDic,ProcessedRest).
+process_patterns([tag:if_not,\+Pred|Rest],VarsDic,[tag:if_not,TransPred|ProcessedRest]):-
+    Pred=..[Name|Args],
+    translate_variables(Args,VarsDic,TransArgs),
+    TransPred=..[Name|TransArgs],
+    process_patterns(Rest,VarsDic,ProcessedRest).
 process_patterns([Pred|Rest],VarsDic,[TransPred|ProcessedRest]):-
     Pred=..[Name|Args],
     translate_variables(Args,VarsDic,TransArgs),
@@ -202,16 +220,21 @@ patterns_to_text([Pattern|Rest],[Text|TextRest]):-
 patterns_to_text([],[]).
 
 %Process processed patterns into text
-pattern_to_text([tag:iter_loop(Elements)|Rest],[Text,tag:indent|TextRest]):-
+pattern_to_text([tag:iter_loop(Elements)|Rest],[tag:iter_loop,Text,tag:indent|TextRest]):-
     iter_loop_description(Elements,Text),
     pattern_to_text(Rest,TextRest).
 pattern_to_text([tag:for_loop,Args,Pred|Rest],[Text,tag:indent|TextRest]):-
     for_loop_description(Args,Pred,Text),
     pattern_to_text(Rest,TextRest).
+pattern_to_text([tag:if_clause,Condition|Rest],[Text,tag:indent|TextRest]):-
+    if_clause_description(Condition,Text),
+    pattern_to_text(Rest,TextRest).
+pattern_to_text([tag:if_not,Condition|Rest],[Text,tag:indent|TextRest]):-
+    if_clause_description(not,Condition,Text),
+    pattern_to_text(Rest,TextRest).
 pattern_to_text([tag:while_loop,Condition|Rest],[Text,tag:indent|TextRest]):-
     while_loop_description(Condition,Text),
     repeat_pattern_to_text(Rest,TextRest).
-%TODO PROCESS RECURSION PATTERN
 pattern_to_text([Predicate|Rest],[Predicate|TextRest]):-
     pattern_to_text(Rest,TextRest).
 pattern_to_text([],[]).
@@ -230,6 +253,16 @@ for_loop_description(Arguments,Predicate,Description):-
     atom_concat(Text1, '):', Text2),
     atom_concat(Text2, AtomPred, Text3),
     atom_concat(Text3,')',Description).
+
+%Describe an if clause with condition
+if_clause_description(Condition,Description):-
+    term_to_atom(Condition,AtomCon),
+    atom_concat('if(', AtomCon, Text1),
+    atom_concat(Text1,')',Description).
+if_clause_description(not,Condition,Description):-
+    term_to_atom(Condition,AtomCon),
+    atom_concat('if(not ', AtomCon, Text1),
+    atom_concat(Text1,')',Description).
 
 %Describe a while loop with Variables
 while_loop_description(Condition,Description):-
@@ -279,6 +312,14 @@ process_writes_skip([Pred|Rest],[Pred|ProcessedRest]):-
     process_writes(Rest,ProcessedRest).
 process_writes_skip([],[]).
 
+%Assure coherence in indentation so that the descriptions stay inside
+%the main iteration loop 
+process_iteration_coherence([Head|Rest],[Coherent]):-
+    member(tag:iter_loop,Head),
+    delete(Head,tag:iter_loop, ListWithout),
+    add_to_matrix(Rest,tag:unindent,NewRest),
+    flatten([ListWithout|NewRest],Coherent).
+    
 %Head is predicate head in atom format
 process_predicate_head(Name,HeadArgs,Head):-
     atomic_concat(Name,'(', Atom1),
@@ -298,17 +339,23 @@ print_formatted(java,List,Indentation):-
 print_formatted(python,List,Indentation):-
     print_python_style(List,Indentation),!.
 
-%Writes text in a java-like style of formatting
-print_java_style([Head,tag:indent|Rest],Indentation,Count):-
+%Writes text in a java-like style of formatting. 
+print_java_style([Head,tag:indent|Rest],Indentation,BracketCount):-
     tab(Indentation),
     write(Head),write('{'),
     nl,
     NewIndentation is Indentation+5,
-    NewCount is Count+1,
+    NewCount is BracketCount+1,
     print_java_style(Rest,NewIndentation,NewCount).
-print_java_style([tag:indent|Rest],Indentation,Count):-
+print_java_style([tag:indent|Rest],Indentation,BracketCount):-
     NewIndentation is Indentation+5,
-    NewCount is Count+1,
+    NewCount is BracketCount+1,
+    print_java_style(Rest,NewIndentation,NewCount).
+print_java_style([tag:unindent|Rest],Indentation,BracketCount):-
+    NewIndentation is Indentation-5,
+    tab(NewIndentation),
+    write('}'),nl,
+    NewCount is BracketCount-1,
     print_java_style(Rest,NewIndentation,NewCount).
 print_java_style([Head|Rest],Indentation,Count):-
     tab(Indentation),
@@ -337,6 +384,9 @@ print_python_style([Head,tag:indent|Rest],Indentation):-
     print_python_style(Rest,NewIndentation).
 print_python_style([tag:indent|Rest],Indentation):-
     NewIndentation is Indentation+5,
+    print_python_style(Rest,NewIndentation).
+print_python_style([tag:unindent|Rest],Indentation):-
+    NewIndentation is Indentation-5,
     print_python_style(Rest,NewIndentation).
 print_python_style([Head|Rest],Indentation):-
     tab(Indentation),

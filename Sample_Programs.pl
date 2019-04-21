@@ -80,6 +80,16 @@ printList4([Head|Rest]):-
 	write(Head),nl,
 	printList(Rest).
 
+findElements(N,[Head|Rest]):-
+    Head==N,
+    write('Got it!'),
+    findElements(N,Rest).
+findElements(N,[Head|Rest]):-
+    \+Head==N,
+    write('Nope'),
+    findElements(N,Rest).
+findElements(_,[]).
+
 testfail(P):-
     status(_,_),
     write(P),

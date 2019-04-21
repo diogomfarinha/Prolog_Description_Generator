@@ -146,8 +146,7 @@ get_all_args([Pred|Rest],[Args|ArgsRest]):-
 get_all_args([],[]).
 
 %Predicate is a math equation
-is_math(\+_).
-is_math(_=_).
+%is_math(_=_).
 is_math(_==_).
 is_math(_\=_).
 is_math(_<_).
@@ -155,9 +154,14 @@ is_math(_>_).
 is_math(_=<_).
 is_math(_>=_).
 
+%Predicate is negated
+is_negation(\+_).
+
 %Predicate can fail when called
 predicate_can_fail(Pred):-
     is_math(Pred).
+predicate_can_fail(Pred):-
+    is_negation(Pred).
 predicate_can_fail(Pred):-
     is_fact(Pred).
 predicate_can_fail(member(_,_)).
@@ -170,6 +174,10 @@ predicate_can_fail(Pred):-
 %Predicate can fail when called. Contains list of iterated predicates to prevent infite loops with recursive predicates
 predicate_can_fail(Pred,_):-
     is_math(Pred).
+predicate_can_fail(Pred,_):-
+    is_negation(Pred).
+predicate_can_fail(Pred,_):-
+    is_fact(Pred).
 predicate_can_fail(member(_,_),_).
 predicate_can_fail(Pred,List_of_Predicates):-
     \+predicate_property(Pred,built_in),
@@ -205,3 +213,14 @@ switch_index(_,_,[],_,[]).
 get_element_from_matrix(Index1,Index2,List_of_Lists,Element):-
     nth0(Index1,List_of_Lists,List),
     nth0(Index2,List,Element).
+
+%Delete element from all lists in list of lists
+delete_from_matrix(Element,[Head|Rest],[Clean|CleanRest]):-
+    delete(Head,Element,Clean),
+    delete_from_matrix(Element,Rest,CleanRest).
+delete_from_matrix(_,[],[]).
+
+%Adds element as Head of every list in list of lists
+add_to_matrix([Head|Rest],Element,[[Element|Head],NewRest]):-
+    add_to_matrix(Rest,Element,NewRest).
+add_to_matrix([],_,[]).
