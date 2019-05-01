@@ -305,13 +305,13 @@ process_writes_in_a_row([write(X)|Rest],Args,Text):-
     append(Args,[X],NewArgs),
     process_writes_in_a_row(Rest,NewArgs,Text).
 process_writes_in_a_row([nl|_],Args,Text):-
-    atomic_list_concat(Args,' ',ArgsAtom),
-    atomic_concat('print_line(', ArgsAtom, Atom1),
-    atomic_concat(Atom1, ')', Text).
+    atomic_list_concat(Args,'","',ArgsAtom),
+    atomic_concat('print_line("', ArgsAtom, Atom1),
+    atomic_concat(Atom1, '")', Text).
 process_writes_in_a_row(_,Args,Text):-
-    atomic_list_concat(Args,' ',ArgsAtom),
-    atomic_concat('print(', ArgsAtom, Atom1),
-    atomic_concat(Atom1, ')', Text).
+    atomic_list_concat(Args,'","',ArgsAtom),
+    atomic_concat('print("', ArgsAtom, Atom1),
+    atomic_concat(Atom1, '")', Text).
 
 %Skips writes and nl
 process_writes_skip([write(_)|Rest],ProcessedRest):-
@@ -343,7 +343,7 @@ print_formatted_predicate(Style,[Rule|Rest]):-
     print_formatted(Style,Rule,5),
     print_formatted_predicate(Style,Rest),!.
 print_formatted_predicate(_,[]).
-
+  
 %Print formatted list according to the chosen style
 print_formatted(java,List,Indentation):-
     print_java_style(List,Indentation,0),!.
