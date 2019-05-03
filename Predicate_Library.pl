@@ -52,7 +52,7 @@ get_all_rules_with_term(Pred,_):-
 get_all_rules_with_term(_,List):-
     retract(list_of_rules(List)).
 
-%Gets all rules for a predicate in list format. List contains lists with rule term and rule body (in list format)
+%Gets all rules for a predicate in list format. List contains lists with rule bodies
 get_all_rules(Pred,_):-
     assert(list_of_rules([])),
     rule(Pred,Rule),
@@ -62,6 +62,12 @@ get_all_rules(Pred,_):-
     fail.
 get_all_rules(_,List):-
     retract(list_of_rules(List)).
+
+%Asserts if fact does not exist
+assert_if_not_exists(predicate_instantiated(X)):-
+    \+catch(predicate_instantiated(_),_,fail),
+    assert(predicate_instantiated(X)).
+assert_if_not_exists(_).
 
 %Predicate has more than one solution
 predicate_has_more_solutions(Pred):-

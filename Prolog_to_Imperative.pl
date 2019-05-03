@@ -3,23 +3,32 @@
 %Converts and prints Prolog programs into imperative-style descriptions. Pred is in Name/Arity format
 prolog_to_imperative(Pred):-
     prolog_to_imperative(Pred,java).
-prolog_to_imperative(Pred/Arity,java):-
-    get_patterns(Pred/Arity,HeadArgs,Patterns),
-    nl,write(Patterns),nl,
-    eliminate_iteration_redundancy(Patterns,Clean_Patterns),
-    process_patterns_list(HeadArgs,ProcessedHeadArgs,Clean_Patterns,Processed_Patterns),
+prolog_to_imperative(Name/Arity,java):-
+    get_predicate(Name/Arity,Pred),
+    write(pred:Pred),nl,
+    get_all_rules(Pred,Rules),
+    write(rules:Rules),nl,
+    get_patterns(InstantiatedPred,Rules,Patterns),
+    write(patterns:Patterns),nl,
+    eliminate_iteration_redundancy(Patterns,Filtered_Patterns),
+    write(filtered:Filtered_Patterns),nl,
+    get_variables_dictionary(Filtered_Patterns,VarsDic),!,
+    write(varsdic:VarsDic),nl,
+    process_predicate_head(InstantiatedPred,VarsDic,Head),
+    write(head:Head),nl,
+    process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
+    write(processed:Processed_Patterns),nl,
     patterns_to_text(Processed_Patterns,Text_List),
-    process_writes_in_list(Text_List,Pretty_Text),
-    process_iteration_coherence(Pretty_Text,Coherent_Text),!,
-    write(Coherent_Text),nl,nl,
-    process_predicate_head(Pred,ProcessedHeadArgs,Head),
+    write(text:Text_List),nl,
+    process_writes_in_list(Text_List,Pretty_Text),!,
+    write(pretty:Pretty_Text),nl,nl,
     write(Head),write('{'),nl,
-    print_formatted_predicate(java,Coherent_Text),
+    print_formatted_predicate(java,Pretty_Text),
     write('}'),!.
 prolog_to_imperative(Pred/Arity,python):-
     get_patterns(Pred/Arity,HeadArgs,Patterns),
-    eliminate_iteration_redundancy(Patterns,Clean_Patterns),
-    process_patterns_list(HeadArgs,ProcessedHeadArgs,Clean_Patterns,Processed_Patterns),
+    eliminate_iteration_redundancy(Patterns,Filtered_Patterns),
+    process_patterns_list(HeadArgs,ProcessedHeadArgs,Filtered_Patterns,Processed_Patterns),
     patterns_to_text(Processed_Patterns,Text_List),
     process_writes_in_list(Text_List,Pretty_Text),
     process_iteration_coherence(Pretty_Text,Coherent_Text),!,
@@ -30,8 +39,8 @@ prolog_to_imperative(Pred/Arity,python):-
 %Converts Prolog programs into imperative-style descriptions
 prolog_to_imperative_info(Pred/Arity,ProcessedHeadArgs,Coherent_Text):-
     get_patterns(Pred/Arity,HeadArgs,Patterns),
-    eliminate_iteration_redundancy(Patterns,Clean_Patterns),
-    process_patterns_list(HeadArgs,ProcessedHeadArgs,Clean_Patterns,Processed_Patterns),
+    eliminate_iteration_redundancy(Patterns,Filtered_Patterns),
+    process_patterns_list(HeadArgs,ProcessedHeadArgs,Filtered_Patterns,Processed_Patterns),
     patterns_to_text(Processed_Patterns,Text_List),
     process_writes_in_list(Text_List,Pretty_Text),
     process_iteration_coherence(Pretty_Text,Coherent_Text),!,
@@ -40,20 +49,12 @@ prolog_to_imperative_info(Pred/Arity,ProcessedHeadArgs,Coherent_Text):-
     print_formatted_predicate(java,Coherent_Text),
     write('}'),!.
 
-%Get Prolog programming patterns in predicate
-get_patterns(Name/Arity,HeadArgs,Patterns):-
-    get_predicate(Name/Arity,Pred),
-    get_all_rules_with_term(Pred,List_of_Rules),
-    get_element_from_matrix(0,0,List_of_Rules,Head),
-    Head=..[_|HeadArgs],
-    get_patterns_from_rules(List_of_Rules,Patterns),!.
-
 %Get Prolog programming patterns in list of rules
-get_patterns_from_rules([[Pred,Rule]|Rest],Patterns):-
+get_patterns(Pred,[Rule|Rest],Patterns):-
     pattern(Pred,Rule,Pattern_from_Rule),!,
-    get_patterns_from_rules(Rest,Patterns_from_Rest),
+    get_patterns(Rest,Patterns_from_Rest),
     append([Pattern_from_Rule],Patterns_from_Rest,Patterns).
-get_patterns_from_rules([],[]).
+get_patterns([],[]).
 
 %Identifies and tags Prolog programming patterns
 %fail pattern
@@ -134,26 +135,12 @@ eliminate_iteration_redundancy([Pattern|Rest],[Pattern|ProcessedRest]):-
     eliminate_iteration_redundancy(Rest,ProcessedRest).
 eliminate_iteration_redundancy([],[]).
 
-%Processes patterns in list of patterns
-process_patterns_list(HeadArgs,TransArgs,[Pattern|Rest],[Processed2|Processed_Rest]):-
-    get_variables_dictionary(Pattern,VarsDic),
-    translate_head_args(HeadArgs,VarsDic,TransArgs),!,
-    process_patterns(Pattern,VarsDic,Processed),!,
-    process_recursion(Processed,Processed2),
-    process_patterns_list(Rest,Processed_Rest),!.
-process_patterns_list([],[],[],[]).
-process_patterns_list([Pattern|Rest],[Processed2|Processed_Rest]):-
-    get_variables_dictionary(Pattern,VarsDic),
-    process_patterns(Pattern,VarsDic,Processed),!,
-    process_recursion(Processed,Processed2),
-    process_patterns_list(Rest,Processed_Rest),!.
-process_patterns_list([],[]).
-
-%VarsDic is a list of atom:variable pairs created from the variables in Preds
-get_variables_dictionary(Preds,VarsDic):-
-    get_variables_list(Preds,List),
-    list_to_set(List,Set),
-    create_variables_dictionary(Set,VarsDic,[]),!.
+%Get variables dictionary for all variables in list of patterns
+get_variables_dictionary(Patterns,VarsDic):-
+    flatten(Patterns, FlatPatterns),
+    get_variables_list(FlatPatterns,VarsList),
+    list_to_set(VarsList,VarsSet),
+    create_variables_dictionary(VarsSet,VarsDic).
 
 %Second argument is list of all variables in 1st argument
 get_variables_list([Head|Rest],VarsList):-
@@ -163,11 +150,22 @@ get_variables_list([Head|Rest],VarsList):-
 get_variables_list([],[]).
 
 %Creates list of atom:variable pairs from variables in list
+create_variables_dictionary(List,Dic):-
+    create_variables_dictionary(List,Dic,[]).
 create_variables_dictionary([Head|Rest],[Head:Var|Dic],List):-
     generate_variable(Var),
     \+member(Var,List),
     create_variables_dictionary(Rest,Dic,[Var|List]).
 create_variables_dictionary([],[],_).
+
+%Head is predicate head in atom format
+process_predicate_head(Pred,VarsDic,Head):-
+    Pred=..[Name|Args],
+    translate_head_args(Args,VarsDic,TransArgs),
+    atomic_concat(Name,'(', Atom1),
+    atomic_list_concat(TransArgs,',',AtomArgs),
+    atomic_concat(Atom1, AtomArgs, Atom2),
+    atomic_concat(Atom2,')', Head).
 
 %Translate variables in head of predicate
 translate_head_args(HeadArgs,VarsDic,TransArgs):-
@@ -177,6 +175,34 @@ translate_head_args(HeadArgs,VarsDic,TransArgs):-
     retract(recursion_argument(Index)),
     switch_index(Index,HeadArgs,list,NewArgs),
     translate_variables(NewArgs,VarsDic,TransArgs).
+
+%Translate variables in list with dictionary
+translate_variables([Var|Rest],VarsDic,[Trans|TransRest]):-
+    var(Var),
+    get_translation(Var,VarsDic,Trans),
+    translate_variables(Rest,VarsDic,TransRest).
+translate_variables([Head|Rest],VarsDic,[list2|TransRest]):-
+    \+var(Head),
+    Head=[_|_],
+    translate_variables(Rest,VarsDic,TransRest).
+translate_variables([Atom|Rest],VarsDic,[Atom|TransRest]):-
+    \+var(Atom),
+    translate_variables(Rest,VarsDic,TransRest).
+translate_variables([],_,[]).
+
+%Translated is Var translated according to the dictionary
+get_translation(Var,[Head:Translated|_],Translated):-
+    Var==Head.
+get_translation(Var,[_|Rest],Translated):-
+    get_translation(Var,Rest,Translated).
+get_translation(_,[],var).
+
+%Processes patterns in list of patterns
+process_patterns_list([Pattern|Rest],VarsDic,[Processed2|Processed_Rest]):-
+    process_patterns(Pattern,VarsDic,Processed),!,
+    process_recursion(Processed,Processed2),
+    process_patterns_list(Rest,VarsDic,Processed_Rest),!.
+process_patterns_list([],_,[]).
 
 %Processes pattern list
 process_patterns([tag:iter_loop(Var)|Rest],VarsDic,[tag:iter_loop(TransVar)|ProcessedRest]):-
@@ -211,27 +237,6 @@ process_recursion(Pattern,[tag:iter_loop(Element)|Pattern_without]):-
     member(tag:iter_loop(Element),Pattern),
     delete(Pattern, tag:iter_loop(Element), Pattern_without).
 process_recursion(Pattern,Pattern).
-
-%Translate variables in list with dictionary
-translate_variables([Var|Rest],VarsDic,[Trans|TransRest]):-
-    var(Var),
-    get_translation(Var,VarsDic,Trans),
-    translate_variables(Rest,VarsDic,TransRest).
-translate_variables([Head|Rest],VarsDic,[list2|TransRest]):-
-    \+var(Head),
-    Head=[_|_],
-    translate_variables(Rest,VarsDic,TransRest).
-translate_variables([Atom|Rest],VarsDic,[Atom|TransRest]):-
-    \+var(Atom),
-    translate_variables(Rest,VarsDic,TransRest).
-translate_variables([],_,[]).
-
-%Translated is Var translated according to the dictionary
-get_translation(Var,[Head:Translated|_],Translated):-
-    Var==Head.
-get_translation(Var,[_|Rest],Translated):-
-    get_translation(Var,Rest,Translated).
-get_translation(_,[],var).
 
 %Processes list of processed patterns into list of lists with text and terms
 patterns_to_text([Pattern|Rest],[Text|TextRest]):-
@@ -321,22 +326,6 @@ process_writes_skip([nl|Rest],ProcessedRest):-
 process_writes_skip([Pred|Rest],[Pred|ProcessedRest]):-
     process_writes(Rest,ProcessedRest).
 process_writes_skip([],[]).
-
-%Assure coherence in indentation so that the descriptions stay inside
-%the main iteration loop. Does nothing if iteration is not present
-process_iteration_coherence([Head|Rest],[Coherent]):-
-    member(tag:iter_loop,Head),
-    delete(Head,tag:iter_loop, ListWithout),
-    add_to_matrix(Rest,tag:unindent,NewRest),
-    flatten([ListWithout|NewRest],Coherent).
-process_iteration_coherence(List,List).
-
-%Head is predicate head in atom format
-process_predicate_head(Name,HeadArgs,Head):-
-    atomic_concat(Name,'(', Atom1),
-    atomic_list_concat(HeadArgs,',',AtomArgs),
-    atomic_concat(Atom1, AtomArgs, Atom2),
-    atomic_concat(Atom2,')', Head).
 
 %Print predicate and list of formattted rules
 print_formatted_predicate(Style,[Rule|Rest]):-
