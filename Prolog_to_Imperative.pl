@@ -2,8 +2,8 @@
 
 %Converts and prints Prolog programs into imperative-style descriptions. Pred is in Name/Arity format
 prolog_to_imperative(Pred):-
-    prolog_to_imperative(Pred,java).
-prolog_to_imperative(Name/Arity,java):-
+    prolog_to_imperative_dev(Pred).
+prolog_to_imperative_dev(Name/Arity):-
     get_predicate(Name/Arity,Pred),
     write(pred:Pred),nl,
     get_all_rules(Pred,Rules),
@@ -25,14 +25,29 @@ prolog_to_imperative(Name/Arity,java):-
     write(Head),write('{'),nl,
     print_formatted_predicate(java,Pretty_Text),
     write('}'),!.
-prolog_to_imperative(Pred/Arity,python):-
-    get_patterns(Pred/Arity,HeadArgs,Patterns),
+prolog_to_imperative(Name/Arity,java):-
+    get_predicate(Name/Arity,Pred),
+    get_all_rules(Pred,Rules),
+    get_patterns(Pred,Rules,Patterns),
     eliminate_iteration_redundancy(Patterns,Filtered_Patterns),
-    process_patterns_list(HeadArgs,ProcessedHeadArgs,Filtered_Patterns,Processed_Patterns),
+    get_variables_dictionary(Filtered_Patterns,VarsDic),!,
+    process_predicate_head(Pred,VarsDic,Head),
+    process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
     patterns_to_text(Processed_Patterns,Text_List),
-    process_writes_in_list(Text_List,Pretty_Text),
-    process_iteration_coherence(Pretty_Text,Coherent_Text),!,
-    process_predicate_head(Pred,ProcessedHeadArgs,Head),
+    process_writes_in_list(Text_List,Pretty_Text),!,
+    write(Head),write('{'),nl,
+    print_formatted_predicate(java,Pretty_Text),
+    write('}'),!.
+prolog_to_imperative(Pred/Arity,python):-
+    get_predicate(Name/Arity,Pred),
+    get_all_rules(Pred,Rules),
+    get_patterns(Pred,Rules,Patterns),
+    eliminate_iteration_redundancy(Patterns,Filtered_Patterns),
+    get_variables_dictionary(Filtered_Patterns,VarsDic),!,
+    process_predicate_head(Pred,VarsDic,Head),
+    process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
+    patterns_to_text(Processed_Patterns,Text_List),
+    process_writes_in_list(Text_List,Pretty_Text),!,
     write(Head),write(':'),nl,
     print_formatted_predicate(python,Coherent_Text),!.
 
@@ -127,7 +142,7 @@ list_of_empty_elements(Length,_,_,Length,[]).
 
 %If list of lists contains iteration tag, insert all of them into main list,
 %so that they all belong to the same iteration cycle. Also deletes extra iteration tags
-eliminate_iteration_redundancy([Pattern|Rest],[Pattern|ProcessedRest]):-
+eliminate_iteration_redundancy([Pattern|Rest],[Pattern|ProcessedRest]):- %%%%%%%%%%%%%%%%%%%%%%%%%%%FLATTEN AND UNINDENT
     member(tag:iter_loop(_),Pattern),
     delete_from_matrix(tag:iter_loop(_),Rest,ProcessedRest).
 eliminate_iteration_redundancy([Pattern|Rest],[Pattern|ProcessedRest]):-
