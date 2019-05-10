@@ -52,9 +52,9 @@ prolog_to_imperative_info(Pred/Arity,ProcessedHeadArgs,Coherent_Text):-
 %Get Prolog programming patterns in list of rules
 get_patterns(Pred,[Rule|Rest],Patterns):-
     pattern(Pred,Rule,Pattern_from_Rule),!,
-    get_patterns(Rest,Patterns_from_Rest),
+    get_patterns(Pred,Rest,Patterns_from_Rest),
     append([Pattern_from_Rule],Patterns_from_Rest,Patterns).
-get_patterns([],[]).
+get_patterns(_,[],[]).
 
 %Identifies and tags Prolog programming patterns
 %fail pattern
@@ -245,7 +245,7 @@ patterns_to_text([Pattern|Rest],[Text|TextRest]):-
 patterns_to_text([],[]).
 
 %Process processed patterns into text
-pattern_to_text([tag:iter_loop(Elements)|Rest],[tag:iter_loop,Text,tag:indent|TextRest]):-
+pattern_to_text([tag:iter_loop(Elements)|Rest],[Text,tag:indent|TextRest]):-
     iter_loop_description(Elements,Text),
     pattern_to_text(Rest,TextRest).
 pattern_to_text([tag:for_loop,Args,Pred|Rest],[Text,tag:indent|TextRest]):-

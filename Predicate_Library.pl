@@ -52,16 +52,17 @@ get_all_rules_with_term(Pred,_):-
 get_all_rules_with_term(_,List):-
     retract(list_of_rules(List)).
 
-%Gets all rules for a predicate in list format. List contains lists with rule bodies
-get_all_rules(Pred,_):-
-    assert(list_of_rules([])),
-    rule(Pred,Rule),
-    retract(list_of_rules(List)),
-    append(List,[Rule],New_List),
-    assert(list_of_rules(New_List)),
-    fail.
-get_all_rules(_,List):-
-    retract(list_of_rules(List)).
+%Gets all rules of a predicate in list format. List contains lists with rule bodies
+get_all_rules(Pred,Rules):-
+    list_of_definition_bodies(Pred,Rules),!.
+
+%Gets list of definition bodies from predicate head
+list_of_definition_bodies(Head, Bodies):-
+    findall(Head:-Body, rule(Head, Body), Clauses),
+    list_of_bodies(Head, Clauses, Bodies).
+list_of_bodies(Head, [Head:-B|Clauses], [B|Bodies]):-
+    list_of_bodies(Head, Clauses, Bodies).
+list_of_bodies(_, [], []).
 
 %Asserts if fact does not exist
 assert_if_not_exists(predicate_instantiated(X)):-
@@ -230,3 +231,4 @@ delete_from_matrix(_,[],[]).
 add_to_matrix([Head|Rest],Element,[[Element|Head],NewRest]):-
     add_to_matrix(Rest,Element,NewRest).
 add_to_matrix([],_,[]).
+
