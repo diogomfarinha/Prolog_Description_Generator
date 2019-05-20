@@ -52,16 +52,18 @@ prolog_to_imperative(Name/Arity,python):-
     print_formatted_predicate(python,Pretty_Text),!.
 
 %Converts Prolog programs into imperative-style descriptions
-prolog_to_imperative_info(Pred/Arity,ProcessedHeadArgs,Coherent_Text):-
-    get_patterns(Pred/Arity,HeadArgs,Patterns),
+prolog_to_imperative_info(Name/Arity,Head,Pretty_Text):-
+    get_predicate(Name/Arity,Pred),
+    get_all_rules(Pred,Rules),
+    get_patterns(Pred,Rules,Patterns),
     eliminate_iteration_redundancy(Patterns,Filtered_Patterns),
-    process_patterns_list(HeadArgs,ProcessedHeadArgs,Filtered_Patterns,Processed_Patterns),
+    get_variables_dictionary(Filtered_Patterns,VarsDic),!,
+    process_predicate_head(Pred,VarsDic,Head),
+    process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
     patterns_to_text(Processed_Patterns,Text_List),
-    process_writes_in_list(Text_List,Pretty_Text),
-    process_iteration_coherence(Pretty_Text,Coherent_Text),!,
-    process_predicate_head(Pred,ProcessedHeadArgs,Head),
+    process_writes_in_list(Text_List,Pretty_Text),!,
     write(Head),write('{'),nl,
-    print_formatted_predicate(java,Coherent_Text),
+    print_formatted_predicate(java,Pretty_Text),
     write('}'),!.
 
 %Get Prolog programming patterns in list of rules
@@ -317,24 +319,34 @@ process_writes_in_list([],[]).
 
 %Process all write/1 in list into prettier text
 process_writes([write(X)|Rest],[Text|ProcessedRest]):-
-    process_writes_in_a_row(Rest,[X],Text),
-    process_writes_skip(Rest,ProcessedRest).
+    process_writes_in_a_row([write(X)|Rest],[],Text),
+    process_writes_skip([write(X)|Rest],ProcessedRest).
 process_writes([Pred|Rest],[Pred|ProcessedRest]):-
     process_writes(Rest,ProcessedRest).
 process_writes([],[]).
 
 %Formats writes in a row into prettier text
 process_writes_in_a_row([write(X)|Rest],Args,Text):-
+    atom_length(X,1),
+    append(Args,[X],NewArgs),
+    process_writes_in_a_row(Rest,NewArgs,Text).
+process_writes_in_a_row([write(X)|Rest],Args,Text):-
+    \+atom_length(X,1),
+    atom_concat('\"',X,Atom1),
+    atom_concat(Atom1,'\"',Atom2),
+    append(Args,[Atom2],NewArgs),
+    process_writes_in_a_row(Rest,NewArgs,Text).
+process_writes_in_a_row([write(X)|Rest],Args,Text):-
     append(Args,[X],NewArgs),
     process_writes_in_a_row(Rest,NewArgs,Text).
 process_writes_in_a_row([nl|_],Args,Text):-
-    atomic_list_concat(Args,'","',ArgsAtom),
-    atomic_concat('print_line("', ArgsAtom, Atom1),
-    atomic_concat(Atom1, '")', Text).
+    atomic_list_concat(Args,',',ArgsAtom),
+    atomic_concat('print_line(', ArgsAtom, Atom1),
+    atomic_concat(Atom1, ')', Text).
 process_writes_in_a_row(_,Args,Text):-
-    atomic_list_concat(Args,'","',ArgsAtom),
-    atomic_concat('print("', ArgsAtom, Atom1),
-    atomic_concat(Atom1, '")', Text).
+    atomic_list_concat(Args,',',ArgsAtom),
+    atomic_concat('print(', ArgsAtom, Atom1),
+    atomic_concat(Atom1, ')', Text).
 
 %Skips writes and nl
 process_writes_skip([write(_)|Rest],ProcessedRest):-
