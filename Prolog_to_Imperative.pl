@@ -38,7 +38,7 @@ prolog_to_imperative(Name/Arity,java):-
     write(Head),write('{'),nl,
     print_formatted_predicate(java,Pretty_Text),
     write('}'),!.
-prolog_to_imperative(Pred/Arity,python):-
+prolog_to_imperative(Name/Arity,python):-
     get_predicate(Name/Arity,Pred),
     get_all_rules(Pred,Rules),
     get_patterns(Pred,Rules,Patterns),
@@ -49,7 +49,7 @@ prolog_to_imperative(Pred/Arity,python):-
     patterns_to_text(Processed_Patterns,Text_List),
     process_writes_in_list(Text_List,Pretty_Text),!,
     write(Head),write(':'),nl,
-    print_formatted_predicate(python,Coherent_Text),!.
+    print_formatted_predicate(python,Pretty_Text),!.
 
 %Converts Prolog programs into imperative-style descriptions
 prolog_to_imperative_info(Pred/Arity,ProcessedHeadArgs,Coherent_Text):-
@@ -140,15 +140,25 @@ list_of_empty_elements(Length,Index,Element,Index,[Element|Rest]):-
     list_of_empty_elements(Length,Index,Element,Up,Rest).
 list_of_empty_elements(Length,_,_,Length,[]).
 
-%If list of lists contains iteration tag, insert all of them into main list,
-%so that they all belong to the same iteration cycle. Also deletes extra iteration tags
-eliminate_iteration_redundancy([Pattern|Rest],[Pattern|ProcessedRest]):- %%%%%%%%%%%%%%%%%%%%%%%%%%%FLATTEN AND UNINDENT
-    member(tag:iter_loop(_),Pattern),
-    delete_from_matrix(tag:iter_loop(_),Rest,ProcessedRest).
-eliminate_iteration_redundancy([Pattern|Rest],[Pattern|ProcessedRest]):-
+%Joins Patterns with iteration tags on the same list so that they all belong to the same 
+%iteration cycle (flattens and unindents iteration clauses). 
+%Moves iteration tag to Head of list and deletes extra iteration tags.
+eliminate_iteration_redundancy(Patterns,Patterns):-
+    \+matrix_member(tag:iter_loop(_),Patterns).
+eliminate_iteration_redundancy(Patterns,ProcessedPatterns):-
+    matrix_member(tag:iter_loop(X),Patterns),
+    eliminate_iteration_redundancy(Patterns,PatternsFiltered,IterationPatterns),
+    flatten(IterationPatterns,FlattenedPatterns),
+    append([[tag:iter_loop(X)|FlattenedPatterns]],PatternsFiltered,ProcessedPatterns).
+eliminate_iteration_redundancy([Pattern|Rest],[Pattern|ProcessedRest],IterationClauses):-
     \+member(tag:iter_loop(_),Pattern),
-    eliminate_iteration_redundancy(Rest,ProcessedRest).
-eliminate_iteration_redundancy([],[]).
+    eliminate_iteration_redundancy(Rest,ProcessedRest,IterationClauses).
+eliminate_iteration_redundancy([Pattern|Rest],Patterns,[IterationClause|IterationClauses]):-
+    member(tag:iter_loop(_),Pattern),
+    delete(Pattern, tag:iter_loop(_), Pattern_without),
+    append(Pattern_without,[tag:unindent],IterationClause),
+    eliminate_iteration_redundancy(Rest,Patterns,IterationClauses).
+eliminate_iteration_redundancy([],[],[]).
 
 %Get variables dictionary for all variables in list of patterns
 get_variables_dictionary(Patterns,VarsDic):-

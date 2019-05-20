@@ -232,3 +232,13 @@ add_to_matrix([Head|Rest],Element,[[Element|Head],NewRest]):-
     add_to_matrix(Rest,Element,NewRest).
 add_to_matrix([],_,[]).
 
+%Element belongs to a  list in list of lists
+matrix_member(Element,[List|_]):-
+    member(Element,List).
+matrix_member(Element,[List|Rest]):-
+    \+member(Element,List),
+    matrix_member(Element,Rest).
+
+
+
+
