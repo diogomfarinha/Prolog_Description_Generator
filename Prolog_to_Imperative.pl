@@ -223,9 +223,8 @@ get_translation(Var,[_|Rest],Translated):-
 get_translation(_,[],var).
 
 %Processes patterns in list of patterns
-process_patterns_list([Pattern|Rest],VarsDic,[Processed2|Processed_Rest]):-
+process_patterns_list([Pattern|Rest],VarsDic,[Processed|Processed_Rest]):-
     process_patterns(Pattern,VarsDic,Processed),!,
-    process_recursion(Processed,Processed2),
     process_patterns_list(Rest,VarsDic,Processed_Rest),!.
 process_patterns_list([],_,[]).
 
@@ -256,12 +255,6 @@ process_patterns([Pred|Rest],VarsDic,[TransPred|ProcessedRest]):-
     TransPred=..[Name|TransArgs],
     process_patterns(Rest,VarsDic,ProcessedRest).
 process_patterns([],_,[]).
-
-%Make recursive tag the first member of pattern for coherence
-process_recursion(Pattern,[tag:iter_loop(Element)|Pattern_without]):-
-    member(tag:iter_loop(Element),Pattern),
-    delete(Pattern, tag:iter_loop(Element), Pattern_without).
-process_recursion(Pattern,Pattern).
 
 %Processes list of processed patterns into list of lists with text and terms
 patterns_to_text([Pattern|Rest],[Text|TextRest]):-
