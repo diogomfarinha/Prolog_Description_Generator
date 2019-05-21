@@ -3,10 +3,30 @@
 
 %Natural language descriptions of procedures
 %Prepared descriptions in both present tense and infinitive
-procedure_description(print(X),present,['prints',X,'on the console']).
-procedure_description(print(X),infinitive,['print',X,'on the console']).
-procedure_description(print_line(X),present,['prints',X,'on the console and breaks line']).
-procedure_description(print_line(X),infinitive,['prints',X,'on the console and breaks line']).
+procedure_description(Predicate,present,Desc):-
+    Predicate=..[Name|Args],
+    Name=print,
+    pretty_variables(Args,PrettyArgs),
+    atom_concat('prints ',PrettyArgs,Atom1),
+    atom_concat(Atom1,' on the console',Desc).
+procedure_description(Predicate,infinitive,Desc):-
+    Predicate=..[Name|Args],
+    Name=print,
+    pretty_variables(Args,PrettyArgs),
+    atom_concat('print ',PrettyArgs,Atom1),
+    atom_concat(Atom1,' on the console',Desc).
+procedure_description(Predicate,present,Desc):-
+    Predicate=..[Name|Args],
+    Name=print_line,
+    pretty_variables(Args,PrettyArgs),
+    atom_concat('prints ',PrettyArgs,Atom1),
+    atom_concat(Atom1,' on the console and breaks line',Desc).
+procedure_description(Predicate,infinitive,Desc):-
+    Predicate=..[Name|Args],
+    Name=print_line,
+    pretty_variables(Args,PrettyArgs),
+    atom_concat('print ',PrettyArgs,Atom1),
+    atom_concat(Atom1,' on the console and break line',Desc).
 %Generate description in present tense 
 procedure_description(Predicate,present,Desc):-
     generate_description(Predicate,present,Desc).
@@ -20,12 +40,16 @@ generate_description(Predicate,present,Desc):-
     atom_chars(Name, CharList),
     separate_words(CharList,Words),
     conjugate_verbs(Words,present,Conjugated),!,
-    append(Conjugated,Args,Desc).
+    pretty_variables(Args,PrettyArgs),
+    append(Conjugated,PrettyArgs,DescList),
+    atomic_list_concat(DescList,' ', Desc).
 generate_description(Predicate,infinitive,Desc):-
     Predicate=..[Name|Args],
     atom_chars(Name, CharList),
     separate_words(CharList,Words),
-    append(Words,Args,Desc).
+    pretty_variables(Args,PrettyArgs),
+    append(Words,PrettyArgs,DescList),
+    atomic_list_concat(DescList,' ', Desc).
 
 %Separate words in list of characters according to common programming conventions
 separate_words(CharList,Words):-
@@ -54,5 +78,13 @@ conjugate_verbs([Word|Rest],Tense,[Word|ConjugatedRest]):-
     conjugate_verbs(Rest,Tense,ConjugatedRest).
 conjugate_verbs([],_,[]).
 
-
+%Make variable listing more readable for natural language
+pretty_variables([Var],Var).
+pretty_variables([Head,Tail],Text):-
+    atom_concat(Head, ' and ', Atom1),
+    atom_concat(Atom1,Tail,Text).
+pretty_variables([Head|Rest],Text):-
+    pretty_variables(Rest,TextRest),
+    atom_concat(Head,', ',Atom1),
+    atom_concat(Atom1,TextRest,Text).
 

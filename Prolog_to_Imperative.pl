@@ -22,7 +22,8 @@ prolog_to_imperative_dev(Name/Arity):-
     write(text:Text_List),nl,
     process_writes_in_list(Text_List,Pretty_Text),!,
     write(pretty:Pretty_Text),nl,nl,
-    write(Head),write('{'),nl,
+    listing(Pred),nl,
+    write(Head),write(' {'),nl,
     print_formatted_predicate(java,Pretty_Text),
     write('}'),!.
 prolog_to_imperative(Name/Arity,java):-
@@ -35,6 +36,7 @@ prolog_to_imperative(Name/Arity,java):-
     process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
     patterns_to_text(Processed_Patterns,Text_List),
     process_writes_in_list(Text_List,Pretty_Text),!,
+    listing(Pred),nl,
     write(Head),write('{'),nl,
     print_formatted_predicate(java,Pretty_Text),
     write('}'),!.
@@ -48,6 +50,7 @@ prolog_to_imperative(Name/Arity,python):-
     process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
     patterns_to_text(Processed_Patterns,Text_List),
     process_writes_in_list(Text_List,Pretty_Text),!,
+    listing(Pred),nl,
     write(Head),write(':'),nl,
     print_formatted_predicate(python,Pretty_Text),!.
 
@@ -62,6 +65,7 @@ prolog_to_imperative_info(Name/Arity,Head,Pretty_Text):-
     process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
     patterns_to_text(Processed_Patterns,Text_List),
     process_writes_in_list(Text_List,Pretty_Text),!,
+    listing(Pred),nl,
     write(Head),write('{'),nl,
     print_formatted_predicate(java,Pretty_Text),
     write('}'),!.
@@ -185,14 +189,11 @@ create_variables_dictionary([Head|Rest],[Head:Var|Dic],List):-
     create_variables_dictionary(Rest,Dic,[Var|List]).
 create_variables_dictionary([],[],_).
 
-%Head is predicate head in atom format
+%Head is predicate head with translated variables
 process_predicate_head(Pred,VarsDic,Head):-
     Pred=..[Name|Args],
     translate_head_args(Args,VarsDic,TransArgs),
-    atomic_concat(Name,'(', Atom1),
-    atomic_list_concat(TransArgs,',',AtomArgs),
-    atomic_concat(Atom1, AtomArgs, Atom2),
-    atomic_concat(Atom2,')', Head).
+    Head=..[Name|TransArgs].
 
 %Translate variables in head of predicate
 translate_head_args(HeadArgs,VarsDic,TransArgs):-
@@ -291,9 +292,10 @@ iter_loop_description(Elements,for(Text)):-
 
 %Describe a for loop with arguments and predicate
 for_loop_description(Arguments,Predicate,for(Text2:Predicate)):-
-    atomic_list_concat(Arguments,', ', AtomArgs),
-    atom_concat('(',AtomArgs,Text1),
-    atom_concat(Text1,')',Text2).
+    Text2=..[''|Arguments].
+    %atomic_list_concat(Arguments,', ', AtomArgs),
+    %atom_concat('(',AtomArgs,Text1),
+    %atom_concat(Text1,')',Text2).
 
 %Describe an if clause with condition
 if_clause_description(Condition,if(Condition)).
@@ -325,28 +327,24 @@ process_writes([Pred|Rest],[Pred|ProcessedRest]):-
     process_writes(Rest,ProcessedRest).
 process_writes([],[]).
 
-%Formats writes in a row into prettier text
-process_writes_in_a_row([write(X)|Rest],Args,Text):-
+%Formats writes in a row into a prettier format
+process_writes_in_a_row([write(X)|Rest],Args,Pretty):-
     atom_length(X,1), %assumes 1 character sized atoms are variables
     append(Args,[X],NewArgs),
-    process_writes_in_a_row(Rest,NewArgs,Text).
-process_writes_in_a_row([write(X)|Rest],Args,Text):-
+    process_writes_in_a_row(Rest,NewArgs,Pretty).
+process_writes_in_a_row([write(X)|Rest],Args,Pretty):-
     \+atom_length(X,1), %assumes atoms with more than 1 character are text
     atom_concat('\"',X,Atom1),
     atom_concat(Atom1,'\"',Atom2),
     append(Args,[Atom2],NewArgs),
-    process_writes_in_a_row(Rest,NewArgs,Text).
-process_writes_in_a_row([write(X)|Rest],Args,Text):-
+    process_writes_in_a_row(Rest,NewArgs,Pretty).
+process_writes_in_a_row([write(X)|Rest],Args,Pretty):-
     append(Args,[X],NewArgs),
-    process_writes_in_a_row(Rest,NewArgs,Text).
-process_writes_in_a_row([nl|_],Args,Text):-
-    atomic_list_concat(Args,',',ArgsAtom),
-    atomic_concat('print_line(', ArgsAtom, Atom1),
-    atomic_concat(Atom1, ')', Text).
-process_writes_in_a_row(_,Args,Text):-
-    atomic_list_concat(Args,',',ArgsAtom),
-    atomic_concat('print(', ArgsAtom, Atom1),
-    atomic_concat(Atom1, ')', Text).
+    process_writes_in_a_row(Rest,NewArgs,Pretty).
+process_writes_in_a_row([nl|_],Args,Pretty):-
+    Pretty=..[print_line|Args].
+process_writes_in_a_row(_,Args,Pretty):-
+    Pretty=..[print|Args].
 
 %Skips writes and nl
 process_writes_skip([write(_)|Rest],ProcessedRest):-
