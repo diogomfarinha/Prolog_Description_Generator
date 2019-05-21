@@ -327,11 +327,11 @@ process_writes([],[]).
 
 %Formats writes in a row into prettier text
 process_writes_in_a_row([write(X)|Rest],Args,Text):-
-    atom_length(X,1),
+    atom_length(X,1), %assumes 1 character sized atoms are variables
     append(Args,[X],NewArgs),
     process_writes_in_a_row(Rest,NewArgs,Text).
 process_writes_in_a_row([write(X)|Rest],Args,Text):-
-    \+atom_length(X,1),
+    \+atom_length(X,1), %assumes atoms with more than 1 character are text
     atom_concat('\"',X,Atom1),
     atom_concat(Atom1,'\"',Atom2),
     append(Args,[Atom2],NewArgs),
