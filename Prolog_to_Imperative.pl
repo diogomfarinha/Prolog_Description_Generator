@@ -21,7 +21,9 @@ prolog_to_imperative_dev(Name/Arity):-
     write(processed:Processed_Patterns),nl,
     patterns_to_text(Processed_Patterns,Text_List),
     write(text:Text_List),nl,
-    process_writes_in_list(Text_List,Pretty_Text),!,
+    process_ifs_in_list(Text_List,Formatted_Text),!,
+    write(formatted:Formatted_Text),
+    process_writes_in_list(Formatted_Text,Pretty_Text),!,
     write(pretty:Pretty_Text),nl,nl,
     listing(Pred),nl,
     write(Head),write(' {'),nl,
@@ -37,7 +39,8 @@ prolog_to_imperative(Name/Arity,java):-
     process_predicate_head(Pred,VarsDic,Head),
     process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
     patterns_to_text(Processed_Patterns,Text_List),
-    process_writes_in_list(Text_List,Pretty_Text),!,
+    process_ifs_in_list(Text_List,Formatted_Text),!,
+    process_writes_in_list(Formatted_Text,Pretty_Text),!,
     listing(Pred),nl,
     write(Head),write('{'),nl,
     print_formatted_predicate(java,Pretty_Text),
@@ -52,7 +55,8 @@ prolog_to_imperative(Name/Arity,python):-
     process_predicate_head(Pred,VarsDic,Head),
     process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
     patterns_to_text(Processed_Patterns,Text_List),
-    process_writes_in_list(Text_List,Pretty_Text),!,
+    process_ifs_in_list(Text_List,Formatted_Text),!,
+    process_writes_in_list(Formatted_Text,Pretty_Text),!,
     listing(Pred),nl,
     write(Head),write(':'),nl,
     print_formatted_predicate(python,Pretty_Text),!.
@@ -68,7 +72,8 @@ prolog_to_imperative_info(Name/Arity,Head,Pretty_Text):-
     process_predicate_head(Pred,VarsDic,Head),
     process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
     patterns_to_text(Processed_Patterns,Text_List),
-    process_writes_in_list(Text_List,Pretty_Text),!,
+    process_ifs_in_list(Text_List,Formatted_Text),!,
+    process_writes_in_list(Formatted_Text,Pretty_Text),!,
     listing(Pred),nl,
     write(Head),write('{'),nl,
     print_formatted_predicate(java,Pretty_Text),
@@ -297,9 +302,6 @@ iter_loop_description(Elements,for(Text)):-
 %Describe a for loop with arguments and predicate
 for_loop_description(Arguments,Predicate,for(Text2:Predicate)):-
     Text2=..[''|Arguments].
-    %atomic_list_concat(Arguments,', ', AtomArgs),
-    %atom_concat('(',AtomArgs,Text1),
-    %atom_concat(Text1,')',Text2).
 
 %Describe an if clause with condition
 if_clause_description(Condition,if(Condition)).
@@ -316,6 +318,26 @@ repeat_pattern_to_text([tag:canfail,Pred|Rest],[watch_execution(Pred), 'if succe
 repeat_pattern_to_text([Pred|Rest],[Pred|TextRest]):-
     repeat_pattern_to_text(Rest,TextRest).
 repeat_pattern_to_text([],[break]).
+
+%Process if clauses in all lists into if-else if applicable 
+process_ifs_in_list([Pattern|Rest],[Processed|ProcessedRest]):-
+    process_ifs(Pattern,Processed),
+    process_ifs_in_list(Rest,ProcessedRest),!.
+process_ifs_in_list([],[]).
+
+%Transform if clauses in  list into if-else if applicable 
+process_ifs(List,ProcessedList):-
+    get_ifs(List,[if(Cond1),if(Cond2)]),
+    opposite_conditions(Cond1,Cond2),
+    select(if(Cond2), List, else, ProcessedList).
+process_ifs(List,List).
+
+%Get ifs from list
+get_ifs([if(X)|Rest],[if(X)|GetRest]):-
+    get_ifs(Rest,GetRest).
+get_ifs([_|Rest],GetRest):-
+    get_ifs(Rest,GetRest).
+get_ifs([],[]).
 
 %Process write/1 in all lists into prettier text
 process_writes_in_list([Pattern|Rest],[Processed|ProcessedRest]):-

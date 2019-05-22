@@ -239,6 +239,20 @@ matrix_member(Element,[List|Rest]):-
     \+member(Element,List),
     matrix_member(Element,Rest).
 
+%Disjunction between conditions encompasses all possible cases
+opposite_conditions(X=Y,X\=Y).
+opposite_conditions(X=Y,Y\=X).
+opposite_conditions(X\=Y,X=Y).
+opposite_conditions(X\=Y,Y=X).
+opposite_conditions(X==Y,X\=Y).
+opposite_conditions(X==Y,Y\=X).
+opposite_conditions(X\=Y,X==Y).
+opposite_conditions(X\=Y,Y==X).
+opposite_conditions(X<Y,X>=Y).
+opposite_conditions(X>=Y,X<Y).
+opposite_conditions(X>Y,X=<Y).
+opposite_conditions(X=<Y,X>Y).
+
 
 
 
