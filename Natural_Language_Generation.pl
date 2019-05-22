@@ -88,3 +88,25 @@ pretty_variables([Head|Rest],Text):-
     atom_concat(Head,', ',Atom1),
     atom_concat(Atom1,TextRest,Text).
 
+%Process condition into natural language
+condition_description(A=B,Desc):-
+    atom_concat(A,' is equal to ',Atom1),
+    atom_concat(Atom1,B,Desc).
+condition_description(A==B,Desc):-
+    atom_concat(A,' is equal to ',Atom1),
+    atom_concat(Atom1,B,Desc).
+condition_description(A\=B,Desc):-
+    atom_concat(A,' is different than ',Atom1),
+    atom_concat(Atom1,B,Desc).
+condition_description(A>B,Desc):-
+    atom_concat(A,' is bigger than ',Atom1),
+    atom_concat(Atom1,B,Desc).
+condition_description(A<B,Desc):-
+    atom_concat(A,' is less than ',Atom1),
+    atom_concat(Atom1,B,Desc).
+condition_description(A=<B,Desc):-
+    atom_concat(A,' is equal or less than ',Atom1),
+    atom_concat(Atom1,B,Desc).
+condition_description(A>=B,Desc):-
+    atom_concat(A,' is bigger or equal to ',Atom1),
+    atom_concat(Atom1,B,Desc).

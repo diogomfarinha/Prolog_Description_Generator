@@ -100,7 +100,7 @@ findElements(N,[Head|Rest]):-
     write('Found it!'),
     findElements(N,Rest).
 findElements(N,[Head|Rest]):-
-    \+Head==N,
+    Head\=N,
     write('Nope'),
     findElements(N,Rest).
 findElements(_,[]).

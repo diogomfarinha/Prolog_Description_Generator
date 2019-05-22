@@ -4,6 +4,7 @@
 prolog_to_imperative(Pred):-
     prolog_to_imperative_dev(Pred).
 prolog_to_imperative_dev(Name/Arity):-
+    nl,
     get_predicate(Name/Arity,Pred),
     write(pred:Pred),nl,
     get_all_rules(Pred,Rules),
@@ -27,6 +28,7 @@ prolog_to_imperative_dev(Name/Arity):-
     print_formatted_predicate(java,Pretty_Text),
     write('}'),!.
 prolog_to_imperative(Name/Arity,java):-
+    nl,
     get_predicate(Name/Arity,Pred),
     get_all_rules(Pred,Rules),
     get_patterns(Pred,Rules,Patterns),
@@ -41,6 +43,7 @@ prolog_to_imperative(Name/Arity,java):-
     print_formatted_predicate(java,Pretty_Text),
     write('}'),!.
 prolog_to_imperative(Name/Arity,python):-
+    nl,
     get_predicate(Name/Arity,Pred),
     get_all_rules(Pred,Rules),
     get_patterns(Pred,Rules,Patterns),
@@ -56,6 +59,7 @@ prolog_to_imperative(Name/Arity,python):-
 
 %Converts Prolog programs into imperative-style descriptions
 prolog_to_imperative_info(Name/Arity,Head,Pretty_Text):-
+    nl,
     get_predicate(Name/Arity,Pred),
     get_all_rules(Pred,Rules),
     get_patterns(Pred,Rules,Patterns),
