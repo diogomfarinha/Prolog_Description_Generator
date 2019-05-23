@@ -20,9 +20,10 @@ age(john,27).
 age(michael,54).
 
 displayOld:-
+    status(Person,Status),
     age(Person,Age),
     Age>80,
-    write(Person),write(' is '),write(Age),nl,
+    write(Person),write(' is '),write(Age),write(' old and '),write(Status),nl,
     fail.
 displayOld.
 
@@ -38,6 +39,19 @@ inputPassword:-
 processPassword(Password):-
     Password=11037,
     write('PASSWORD ACCEPTED').
+
+name(michael).
+password(michael,mic123).
+
+inputCredentials:-
+    repeat,
+    write('Username:'),nl,
+    read(Name),
+    name(Name),
+    write('Password:'),nl,
+    read(Password),
+    password(Name,Password),
+    write('Credentials accepted').
 
 remove_from_list(X,[X|Rest],List):-
     remove_from_list(X,Rest,List).

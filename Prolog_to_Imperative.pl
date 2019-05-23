@@ -2,7 +2,7 @@
 
 %Converts and prints Prolog programs into imperative-style descriptions. Pred is in Name/Arity format
 prolog_to_imperative(Pred):-
-    prolog_to_imperative_dev(Pred).
+    prolog_to_imperative(Pred,java).
 prolog_to_imperative_dev(Name/Arity):-
     nl,
     get_predicate(Name/Arity,Pred),
@@ -22,7 +22,7 @@ prolog_to_imperative_dev(Name/Arity):-
     patterns_to_text(Processed_Patterns,Text_List),
     write(text:Text_List),nl,
     process_ifs_in_list(Text_List,Formatted_Text),!,
-    write(formatted:Formatted_Text),
+    write(formatted:Formatted_Text),nl,
     process_writes_in_list(Formatted_Text,Pretty_Text),!,
     write(pretty:Pretty_Text),nl,nl,
     listing(Pred),nl,
@@ -110,7 +110,7 @@ pattern(Predicate,[Pred|Body],[tag:iter_loop(Head)|Rest]):-
     catch(New_Predicate,_,fail),%Prevent errors from calling non-existent predicates
     assert(recursion_argument(Index)),
     pattern(Predicate,Body,Rest).
-%if pattern
+%if pattern- incomplete, still needs work
 pattern(Predicate,[Pred|Body],[tag:if_clause,Pred|Rest]):-
     is_math(Pred),
     pattern(Predicate,Body,Rest).
@@ -249,7 +249,7 @@ process_patterns([tag:for_loop,Pred|Rest],VarsDic,[tag:for_loop,TransArgs,TransP
     translate_variables(Args,VarsDic,TransArgs),
     TransPred=..[Name|TransArgs],
     process_patterns(Rest,VarsDic,ProcessedRest).
-process_patterns([tag:repeat_loop|Rest],VarsDic,[tag:while_loop,true|ProcessedRest]):-
+process_patterns([tag:repeat_loop|Rest],VarsDic,[tag:do_while|ProcessedRest]):-
     process_patterns(Rest,VarsDic,ProcessedRest).
 process_patterns([tag:if_clause,Pred|Rest],VarsDic,[tag:if_clause,TransPred|ProcessedRest]):-
     (Pred)=..[Name|Args],
@@ -287,9 +287,11 @@ pattern_to_text([tag:if_clause,Condition|Rest],[Text,tag:indent|TextRest]):-
 pattern_to_text([tag:if_not,Condition|Rest],[Text,tag:indent|TextRest]):-
     if_clause_description(not,Condition,Text),
     pattern_to_text(Rest,TextRest).
-pattern_to_text([tag:while_loop,Condition|Rest],[Text,tag:indent|TextRest]):-
-    while_loop_description(Condition,Text),
-    repeat_pattern_to_text(Rest,TextRest).
+pattern_to_text([tag:do_while|Rest],Text):-
+    count_member(tag:canfail,Rest,Count),!,
+    do_while_description(Count,DoText),
+    repeat_pattern_to_text(Rest,TextRest),
+    append(DoText,TextRest,Text).
 pattern_to_text([Predicate|Rest],[Predicate|TextRest]):-
     pattern_to_text(Rest,TextRest).
 pattern_to_text([],[]).
@@ -310,14 +312,17 @@ if_clause_description(not,Condition,if(Text)):-
     atom_concat('not ', AtomCon, Text).
 
 %Describe a while loop with Variables
-while_loop_description(Condition,while(Condition)).
+do_while_description(0,[]).
+do_while_description(Count,[do,tag:indent|Rest]):-
+    CountDown is Count-1,
+    do_while_description(CountDown,Rest).
 
 %Process predicates in a repeat pattern to text
-repeat_pattern_to_text([tag:canfail,Pred|Rest],[watch_execution(Pred), 'if successful',tag:indent|TextRest]):-
+repeat_pattern_to_text([tag:canfail,Pred|Rest],[tag:write_unindent,while(not_successful(Pred))|TextRest]):-
     repeat_pattern_to_text(Rest,TextRest).
 repeat_pattern_to_text([Pred|Rest],[Pred|TextRest]):-
     repeat_pattern_to_text(Rest,TextRest).
-repeat_pattern_to_text([],[break]).
+repeat_pattern_to_text([],[]).
 
 %Process if clauses in all lists into if-else if applicable 
 process_ifs_in_list([Pattern|Rest],[Processed|ProcessedRest]):-
@@ -405,10 +410,17 @@ print_java_style([tag:indent|Rest],Indentation,BracketCount):-
     NewIndentation is Indentation+5,
     NewCount is BracketCount+1,
     print_java_style(Rest,NewIndentation,NewCount).
+print_java_style([tag:write_unindent,Head|Rest],Indentation,BracketCount):-
+    NewIndentation is Indentation-5,
+    tab(NewIndentation),
+    BracketCount>=1,
+    write('} '),write(Head),nl,
+    NewCount is BracketCount-1,
+    print_java_style(Rest,NewIndentation,NewCount).
 print_java_style([tag:unindent|Rest],Indentation,BracketCount):-
     NewIndentation is Indentation-5,
     tab(NewIndentation),
-    BracketCount>=2,
+    BracketCount>=1,
     write('}'),nl,
     NewCount is BracketCount-1,
     print_java_style(Rest,NewIndentation,NewCount).
@@ -442,6 +454,9 @@ print_python_style([Head,tag:indent|Rest],Indentation):-
     print_python_style(Rest,NewIndentation).
 print_python_style([tag:indent|Rest],Indentation):-
     NewIndentation is Indentation+5,
+    print_python_style(Rest,NewIndentation).
+print_python_style([tag:write_unindent|Rest],Indentation):-
+    NewIndentation is Indentation-5,
     print_python_style(Rest,NewIndentation).
 print_python_style([tag:unindent|Rest],Indentation):-
     NewIndentation is Indentation-5,

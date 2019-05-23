@@ -34,11 +34,10 @@ is_fact(Pred):-
 
 %Counts occurences of element in list
 count_member(Element,[Element|Rest],Count_Up):-
-    Count_Up is Count+1,
-    count_member(Rest,Element,Count).
-count_member(Element,[Head|Rest],Count):-
-    Head\=Element,
-    count_member(Rest,Element,Count).
+    count_member(Element,Rest,Count),
+    Count_Up is Count+1.
+count_member(Element,[_|Rest],Count):-
+    count_member(Element,Rest,Count).
 count_member(_,[],0).
 
 %Gets all rules for a predicate in list format. List contains lists with rule term and rule body (in list format)

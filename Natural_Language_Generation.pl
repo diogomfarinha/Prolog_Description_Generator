@@ -27,12 +27,22 @@ procedure_description(Predicate,infinitive,Desc):-
     pretty_variables(Args,PrettyArgs),
     atom_concat('print ',PrettyArgs,Atom1),
     atom_concat(Atom1,' on the console and break line',Desc).
+procedure_description(Predicate,present,Desc):-
+    Predicate=..[Name|Args],
+    Name=read,
+    pretty_variables(Args,PrettyArgs),
+    atom_concat('prompts the user for ',PrettyArgs,Desc).
+procedure_description(Predicate,infinitive,Desc):-
+    Predicate=..[Name|Args],
+    Name=read,
+    pretty_variables(Args,PrettyArgs),
+    atom_concat('prompt the user for ',PrettyArgs,Desc).
 %Generate description in present tense 
 procedure_description(Predicate,present,Desc):-
-    generate_description(Predicate,present,Desc).
+    generate_description(Predicate,present,Desc),!.
 %Generate description in infinitive
 procedure_description(Predicate,infinitive,Desc):-
-    generate_description(Predicate,infinitive,Desc).
+    generate_description(Predicate,infinitive,Desc),!.
 
 %Automatic generation of natural language descriptions
 generate_description(Predicate,present,Desc):-
@@ -41,14 +51,14 @@ generate_description(Predicate,present,Desc):-
     separate_words(CharList,Words),
     conjugate_verbs(Words,present,Conjugated),!,
     pretty_variables(Args,PrettyArgs),
-    append(Conjugated,PrettyArgs,DescList),
+    append(Conjugated,[PrettyArgs],DescList),
     atomic_list_concat(DescList,' ', Desc).
 generate_description(Predicate,infinitive,Desc):-
     Predicate=..[Name|Args],
     atom_chars(Name, CharList),
     separate_words(CharList,Words),
     pretty_variables(Args,PrettyArgs),
-    append(Words,PrettyArgs,DescList),
+    append(Words,[PrettyArgs],DescList),
     atomic_list_concat(DescList,' ', Desc).
 
 %Separate words in list of characters according to common programming conventions
@@ -56,6 +66,13 @@ separate_words(CharList,Words):-
     separate_words(CharList,[],Words),!.
 separate_words([C|Rest],Current,[Word|Words]):-
     C='_',
+    atom_chars(Word,Current),
+    separate_words(Rest,[],Words).
+separate_words([C|Rest],[],Words):-
+    char_type(C,digit),
+    separate_words(Rest,[],Words).
+separate_words([C|Rest],Current,[Word|Words]):-
+    char_type(C,digit),
     atom_chars(Word,Current),
     separate_words(Rest,[],Words).
 separate_words([C|Rest],Current,[Word|Words]):-
