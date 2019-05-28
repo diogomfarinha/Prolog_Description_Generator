@@ -47,6 +47,7 @@ prolog_to_nl_dev(Name/0):-
     write(Text).
 prolog_to_nl_dev(Name/Arity):-
     prolog_to_imperative_info(Name/Arity,Head,Body),
+    nl,nl,
     write(body:Body),nl,
     process_header(Head,Header),
     writeq(header:Header),nl,
@@ -118,7 +119,7 @@ process_clause([if(Condition)|Rest],[Desc,tag:subject|DescRest]):-
     process_clause(Rest,DescRest).
 process_clause([tag:X|Rest],[tag:X|DescRest]):-
     process_clause(Rest,DescRest).
-process_clause([else|Rest],[otherwise|DescRest]):-
+process_clause([else|Rest],[', otherwise,',tag:subject|DescRest]):-
     process_clause(Rest,DescRest).
 process_clause([Pred|Rest],[Desc|DescRest]):-
     compound(Pred),
@@ -151,9 +152,7 @@ filter_subject([],[]).
 %Process end_of_phrase tags and capitalize appropriately all lists in list
 process_punctuation([List|Rest],Processed):-
     split_phrases(List,Phrases),!,
-    write(phrases:Phrases),nl,
     capitalize_phrases(Phrases,Capitalized),
-    write(capitalized:Capitalized),nl,
     process_punctuation(Rest,PhrasesRest),
     append(Capitalized,PhrasesRest,Processed).
 process_punctuation([],[]).

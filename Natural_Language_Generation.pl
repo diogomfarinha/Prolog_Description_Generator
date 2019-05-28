@@ -6,27 +6,31 @@
 procedure_description(Predicate,present,Desc):-
     Predicate=..[Name|Args],
     Name=print,
-    pretty_variables(Args,PrettyArgs),
-    atom_concat('prints ',PrettyArgs,Atom1),
-    atom_concat(Atom1,' on the console',Desc).
+    remove_quotes_in_args(Args,Args2),
+    atomic_list_concat(Args2,'', AtomArgs),
+    atom_concat('prints \"',AtomArgs,Atom1),
+    atom_concat(Atom1,'\" on the console',Desc).
 procedure_description(Predicate,infinitive,Desc):-
     Predicate=..[Name|Args],
     Name=print,
-    pretty_variables(Args,PrettyArgs),
-    atom_concat('print ',PrettyArgs,Atom1),
-    atom_concat(Atom1,' on the console',Desc).
+    remove_quotes_in_args(Args,Args2),
+    atomic_list_concat(Args2,'', AtomArgs),
+    atom_concat('print \"',AtomArgs,Atom1),
+    atom_concat(Atom1,'\" on the console',Desc).
 procedure_description(Predicate,present,Desc):-
     Predicate=..[Name|Args],
     Name=print_line,
-    pretty_variables(Args,PrettyArgs),
-    atom_concat('prints ',PrettyArgs,Atom1),
-    atom_concat(Atom1,' on the console and breaks line',Desc).
+    remove_quotes_in_args(Args,Args2),
+    atomic_list_concat(Args2,'', AtomArgs),
+    atom_concat('prints \"',AtomArgs,Atom1),
+    atom_concat(Atom1,'\" on the console and breaks line',Desc).
 procedure_description(Predicate,infinitive,Desc):-
     Predicate=..[Name|Args],
     Name=print_line,
-    pretty_variables(Args,PrettyArgs),
-    atom_concat('print ',PrettyArgs,Atom1),
-    atom_concat(Atom1,' on the console and break line',Desc).
+    remove_quotes_in_args(Args,Args2),
+    atomic_list_concat(Args2,'', AtomArgs),
+    atom_concat('print \"',AtomArgs,Atom1),
+    atom_concat(Atom1,'\" on the console and break line',Desc).
 procedure_description(Predicate,present,Desc):-
     Predicate=..[Name|Args],
     Name=read,
@@ -133,3 +137,24 @@ capitalize(Atom,Capitalized):-
     atom_chars(Atom,[C|Rest]),
     upcase_atom(C, Up),
     atom_chars(Capitalized,[Up|Rest]).
+
+%Remove quotation marks from atoms in list
+remove_quotes_in_args([Atom|Rest],[Clean|CleanRest]):-
+    remove_quotation_marks(Atom,Clean),
+    remove_quotes_in_args(Rest,CleanRest).
+remove_quotes_in_args([],[]).
+
+%Remove quotation marks from atom
+remove_quotation_marks(Atom,Removed):-
+    atom_chars(Atom,Chars),
+    remove_quotation_chars(Chars,CleanChars),
+    atom_chars(Removed,CleanChars).
+
+%Remove quotation mark characters
+remove_quotation_chars(['/','"'|Rest],Removed):-
+    remove_quotation_chars(Rest,Removed).
+remove_quotation_chars(['"'|Rest],Removed):-
+    remove_quotation_chars(Rest,Removed).
+remove_quotation_chars([C|Rest],[C|Removed]):-
+    remove_quotation_chars(Rest,Removed).
+remove_quotation_chars([],[]).

@@ -23,7 +23,7 @@ displayOld:-
     status(Person,Status),
     age(Person,Age),
     Age>80,
-    write(Person),write(' is '),write(Age),write(' old and '),write(Status),nl,
+    write(Person),write(' is '),write(Age),write(' years old and '),write(Status),nl,
     fail.
 displayOld.
 
