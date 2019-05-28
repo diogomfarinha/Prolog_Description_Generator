@@ -11,8 +11,9 @@ prolog_to_nl(Name/0):-
     process_body(Clean_Body,Processed),!,
     filter_subjects(Processed,Filtered),!,
     process_punctuation(Filtered,Processed2),!,
-    process_subjects(Name,Processed2,Processed3),!,
-    process_phrases(Processed3,Text),!,
+    process_conjunctions(Processed2,Processed3),!,
+    process_subjects(Name,Processed3,Processed4),!,
+    process_phrases(Processed4,Text),!,
     nl,nl,
     write(Text).
 prolog_to_nl(Name/Arity):-
@@ -22,8 +23,9 @@ prolog_to_nl(Name/Arity):-
     process_body(Clean_Body,Processed),!,
     filter_subjects(Processed,Filtered),!,
     process_punctuation(Filtered,Processed2),!,
-    process_subjects(Name,Processed2,Processed3),!,
-    process_phrases([Header|Processed3],Text),!,
+    process_conjunctions(Processed2,Processed3),!,
+    process_subjects(Name,Processed3,Processed4),!,
+    process_phrases([Header|Processed4],Text),!,
     nl,nl,
     write(Text).
 
@@ -40,9 +42,11 @@ prolog_to_nl_dev(Name/0):-
     writeq(filtered:Filtered),nl,
     process_punctuation(Filtered,Processed2),!,
     writeq(punctuation:Processed2),nl,
-    process_subjects(Name,Processed2,Processed3),!,
-    writeq(subjects:Processed3),nl,
-    process_phrases(Processed3,Text),!,
+    process_conjunctions(Processed2,Processed3),!,
+    writeq(conjunctions:Processed3),nl,
+    process_subjects(Name,Processed3,Processed4),!,
+    writeq(subjects:Processed4),nl,
+    process_phrases(Processed4,Text),!,
     nl,nl,
     write(Text).
 prolog_to_nl_dev(Name/Arity):-
@@ -59,9 +63,11 @@ prolog_to_nl_dev(Name/Arity):-
     writeq(filtered:Filtered),nl,
     process_punctuation(Filtered,Processed2),!,
     writeq(punctuation:Processed2),nl,
-    process_subjects(Name,Processed2,Processed3),!,
-    writeq(subjects:Processed3),nl,
-    process_phrases([Header|Processed3],Text),!,
+    process_conjunctions(Processed2,Processed3),!,
+    writeq(conjuntions:Processed3),nl,
+    process_subjects(Name,Processed3,Processed4),!,
+    writeq(subjects:Processed4),nl,
+    process_phrases([Header|Processed4],Text),!,
     nl,nl,
     write(Text).
 
@@ -100,7 +106,7 @@ process_clause([for(Iteration)|Rest],[Desc,tag:subject|DescRest]):-
     process_clause(Rest,DescRest).
 process_clause([do|Rest],[tag:subject|DescRest]):-
     process_clause(Rest,DescRest).
-process_clause([while(not(Pred))|Rest],[tag:end_of_phrase,'if',Desc|DescRest]):-
+process_clause([while(not(Pred))|Rest],[tag:end_of_phrase,'if',Desc,tag:end_of_phrase|DescRest]):-
     Pred=..[Name|Args],
     atomic_list_concat(Args,', ', AtomArgs),
     atom_concat(Name,' ',Atom1),
@@ -121,7 +127,13 @@ process_clause([tag:X|Rest],[tag:X|DescRest]):-
     process_clause(Rest,DescRest).
 process_clause([else|Rest],[', otherwise,',tag:subject|DescRest]):-
     process_clause(Rest,DescRest).
-process_clause([Pred|Rest],[Desc|DescRest]):-
+process_clause([Pred|Rest],[Desc,tag:conjunction,'breaks line',tag:conjunction|DescRest]):-
+    compound(Pred),
+    Pred=..[Name|_],
+    Name=print_line,
+    procedure_description(Pred,present,Desc),!,
+    process_clause(Rest,DescRest).
+process_clause([Pred|Rest],[Desc,tag:conjunction|DescRest]):-
     compound(Pred),
     procedure_description(Pred,present,Desc),!,
     process_clause(Rest,DescRest).
@@ -176,6 +188,22 @@ capitalize_phrases([[Head|Rest]|RestList],[[Capitalized|Rest]|CapitalizedRest]):
 capitalize_phrases([[]|RestList],CapitalizedRest):-
     capitalize_phrases(RestList,CapitalizedRest).
 capitalize_phrases([],[]).
+
+%Process conjunctions to unite text excerpts coherently
+process_conjunctions([List|Rest],[Processed|ProcessedRest]):-
+    process_conjunctions(List,[],Processed),
+    process_conjunctions(Rest,ProcessedRest).
+process_conjunctions([],[]).
+process_conjunctions([X,tag:conjunction|Rest],List,Processed):-
+    append(List,[X],NewList),
+    process_conjunctions(Rest,NewList,Processed).
+process_conjunctions([Head|Rest],[],[Head|Processed]):-
+    process_conjunctions(Rest,[],Processed).
+process_conjunctions([Head|Rest],List,[Pretty,Head|Processed]):-
+    pretty_variables(List,Pretty),
+    process_conjunctions(Rest,[],Processed).
+process_conjunctions([],List,[Pretty]):-
+    pretty_variables(List,Pretty).
 
 %Process subject tags in lists
 process_subjects(Name,[List|Rest],[Processed|ProcessedRest]):-

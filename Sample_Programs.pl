@@ -111,11 +111,11 @@ printList4([Head|Rest]):-
 
 findElements(N,[Head|Rest]):-
     Head==N,
-    write('Found it!'),
+    write('Found it! '),
     findElements(N,Rest).
 findElements(N,[Head|Rest]):-
     Head\=N,
-    write('Nope'),
+    write('Nope '),
     findElements(N,Rest).
 findElements(_,[]).
 

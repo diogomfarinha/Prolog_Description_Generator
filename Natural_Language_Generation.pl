@@ -23,14 +23,14 @@ procedure_description(Predicate,present,Desc):-
     remove_quotes_in_args(Args,Args2),
     atomic_list_concat(Args2,'', AtomArgs),
     atom_concat('prints \"',AtomArgs,Atom1),
-    atom_concat(Atom1,'\" on the console and breaks line',Desc).
+    atom_concat(Atom1,'\" on the console',Desc).
 procedure_description(Predicate,infinitive,Desc):-
     Predicate=..[Name|Args],
     Name=print_line,
     remove_quotes_in_args(Args,Args2),
     atomic_list_concat(Args2,'', AtomArgs),
     atom_concat('print \"',AtomArgs,Atom1),
-    atom_concat(Atom1,'\" on the console and break line',Desc).
+    atom_concat(Atom1,'\" on the console',Desc).
 procedure_description(Predicate,present,Desc):-
     Predicate=..[Name|Args],
     Name=read,
@@ -100,6 +100,7 @@ conjugate_verbs([Word|Rest],Tense,[Word|ConjugatedRest]):-
 conjugate_verbs([],_,[]).
 
 %Make variable listing more readable for natural language
+pretty_variables([],'').
 pretty_variables([Var],Var).
 pretty_variables([Head,Tail],Text):-
     atom_concat(Head, ' and ', Atom1),
