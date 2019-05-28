@@ -45,21 +45,30 @@ process_clause([for(Variables:Predicate)|Rest],[Desc,tag:subject|DescRest]):-
     atom_concat('for each ',PrettyVars,Atom1),
     atom_concat(Atom1,' that satisfy ',Atom2),
     term_string(Predicate,PredString),
-    atom_concat(Atom2,PredString,Desc),
+    atom_concat(Atom2,PredString,Atom3),
+    atom_concat(Atom3,',',Desc),
     process_clause(Rest,DescRest).
 process_clause([for(Iteration)|Rest],[Desc,tag:subject|DescRest]):-
     atomic_list_concat(List,' ',Iteration),
     delete(List,in,[Head,Tail]),
-    atom_concat('for each element ',Head,Atom1),
+    atom_concat('for each ',Head,Atom1),
     atom_concat(Atom1,' that belongs to ',Atom2),
-    atom_concat(Atom2,Tail,Desc),
+    atom_concat(Atom2,Tail,Atom3),
+    atom_concat(Atom3,',',Desc),
     process_clause(Rest,DescRest).
 process_clause([do|Rest],[tag:subject|DescRest]):-
     process_clause(Rest,DescRest).
+process_clause([while(not(Pred))|Rest],['. If',Desc|DescRest]):-
+    Pred=..[Name|Args],
+    atomic_list_concat(Args,', ', AtomArgs),
+    atom_concat(Name,' ',Atom1),
+    atom_concat(Atom1,AtomArgs,Atom2),
+    atom_concat(Atom2,' exists, it stops. Otherwise it repeats the same process',Desc),
+    process_clause(Rest,DescRest).
 process_clause([while(not_successful(Pred))|Rest],['. If',tag:subject,Desc|DescRest]):-
-    procedure_description(Pred,infinitive,ProdDesc),!,
+    procedure_description(Pred,infinitive,ProdDesc),
     atom_concat('manages to successfully ',ProdDesc,Atom1),
-    atom_concat(Atom1,' it stops. Otherwise it repeats the same process',Desc),
+    atom_concat(Atom1,', it stops. Otherwise it repeats the same process',Desc),
     process_clause(Rest,DescRest).
 process_clause([tag:X|Rest],[tag:X|DescRest]):-
     process_clause(Rest,DescRest).
@@ -80,26 +89,20 @@ process_clause([],[]).
 
 %Process header of natural language description
 process_header(Head,[Header]):-
-    Head=..[Name|[Arg]],
-    atom_concat(Name,' receives 1 argument: ',Atom1),
-    atom_concat(Atom1,Arg,Header).
-process_header(Head,[Header]):-
     Head=..[Name|Args],
-    length(Args,Length),
-    atom_concat(Name,' receives ',Atom1),
-    atom_concat(Atom1,Length,Atom2),
-    atom_concat(Atom2,' argument: ',Atom3),
+    atom_concat(Name,' receives ',Atom),
     pretty_variables(Args,PrettyArgs),
-    atom_concat(Atom3,PrettyArgs,Header).
+    atom_concat(Atom,PrettyArgs,Header).
 
 %Process subject tags in lists
 process_subjects(Name,[List|Rest],[Processed|ProcessedRest]):-
     process_subject(Name,List,Processed,0),
     process_subjects(Name,Rest,ProcessedRest).
 process_subjects(_,[],[]).
-process_subject(Name,[tag:subject|Rest],[Name|ProcessedRest],N):-
+process_subject(Name,[tag:subject|Rest],[NameAtom|ProcessedRest],N):-
     0 is mod(N,2),
     Up is N+1,
+    atom_concat(Name,',',NameAtom),
     process_subject(Name,Rest,ProcessedRest,Up).
 process_subject(Name,[tag:subject|Rest],[it|ProcessedRest],N):-
     Up is N+1,
@@ -112,8 +115,9 @@ process_subject(_,[],[],_).
 process_phrases([List|Rest],Text):-
     atomic_list_concat(List, ' ', Atom1),
     atom_concat(Atom1,'. ',Atom2),
-    process_phrases(Rest,Atom3),
-    atom_concat(Atom2,Atom3,Text).
+    capitalize(Atom2,Phrase),
+    process_phrases(Rest,Phrases),
+    atom_concat(Phrase,Phrases,Text).
 process_phrases([],'').
     
 

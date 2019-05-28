@@ -3,6 +3,7 @@
 %Converts and prints Prolog programs into imperative-style descriptions. Pred is in Name/Arity format
 prolog_to_imperative(Pred):-
     prolog_to_imperative(Pred,java).
+    %prolog_to_imperative_dev(Pred).
 prolog_to_imperative_dev(Name/Arity):-
     nl,
     get_predicate(Name/Arity,Pred),
@@ -19,7 +20,9 @@ prolog_to_imperative_dev(Name/Arity):-
     write(head:Head),nl,
     process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
     write(processed:Processed_Patterns),nl,
-    patterns_to_text(Processed_Patterns,Text_List),
+    process_loop_coherence(Processed_Patterns,Coherent_Patterns),
+    write(coherent:Coherent_Patterns),nl,
+    patterns_to_text(Coherent_Patterns,Text_List),
     write(text:Text_List),nl,
     process_ifs_in_list(Text_List,Formatted_Text),!,
     write(formatted:Formatted_Text),nl,
@@ -38,7 +41,8 @@ prolog_to_imperative(Name/Arity,java):-
     get_variables_dictionary(Filtered_Patterns,VarsDic),!,
     process_predicate_head(Pred,VarsDic,Head),
     process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
-    patterns_to_text(Processed_Patterns,Text_List),
+    process_loop_coherence(Processed_Patterns,Coherent_Patterns),
+    patterns_to_text(Coherent_Patterns,Text_List),
     process_ifs_in_list(Text_List,Formatted_Text),!,
     process_writes_in_list(Formatted_Text,Pretty_Text),!,
     listing(Pred),nl,
@@ -54,7 +58,8 @@ prolog_to_imperative(Name/Arity,python):-
     get_variables_dictionary(Filtered_Patterns,VarsDic),!,
     process_predicate_head(Pred,VarsDic,Head),
     process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
-    patterns_to_text(Processed_Patterns,Text_List),
+    process_loop_coherence(Processed_Patterns,Coherent_Patterns),
+    patterns_to_text(Coherent_Patterns,Text_List),
     process_ifs_in_list(Text_List,Formatted_Text),!,
     process_writes_in_list(Formatted_Text,Pretty_Text),!,
     listing(Pred),nl,
@@ -71,7 +76,8 @@ prolog_to_imperative_info(Name/Arity,Head,Pretty_Text):-
     get_variables_dictionary(Filtered_Patterns,VarsDic),!,
     process_predicate_head(Pred,VarsDic,Head),
     process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
-    patterns_to_text(Processed_Patterns,Text_List),
+    process_loop_coherence(Processed_Patterns,Coherent_Patterns),
+    patterns_to_text(Coherent_Patterns,Text_List),
     process_ifs_in_list(Text_List,Formatted_Text),!,
     process_writes_in_list(Formatted_Text,Pretty_Text),!,
     listing(Pred),nl,
@@ -268,6 +274,24 @@ process_patterns([Pred|Rest],VarsDic,[TransPred|ProcessedRest]):-
     process_patterns(Rest,VarsDic,ProcessedRest).
 process_patterns([],_,[]).
 
+%Processes coherence in for loops in list
+process_loop_coherence([List|Rest],[Coherent|CoherentRest]):-
+    coherent_loops(List,Coherent),
+    process_loop_coherence(Rest,CoherentRest).
+process_loop_coherence([],[]).
+
+%Assures loops are coherent and do not repeat variables
+coherent_loops(List,Coherent):-
+    coherent_loops(List,Coherent,[]).
+coherent_loops([tag:for_loop,List|Rest],[tag:for_loop,Subtract|CoherentRest],Variables):-
+    intersection(List,Variables,Intersection),
+    subtract(List,Intersection,Subtract),
+    append(Intersection,Subtract,Conjunction),
+    coherent_loops(Rest,CoherentRest,Conjunction).
+coherent_loops([Head|Rest],[Head|CoherentRest],Variables):-
+    coherent_loops(Rest,CoherentRest,Variables).
+coherent_loops([],[],_).
+
 %Processes list of processed patterns into list of lists with text and terms
 patterns_to_text([Pattern|Rest],[Text|TextRest]):-
     pattern_to_text(Pattern,Text),!,
@@ -318,6 +342,9 @@ do_while_description(Count,[do,tag:indent|Rest]):-
     do_while_description(CountDown,Rest).
 
 %Process predicates in a repeat pattern to text
+repeat_pattern_to_text([tag:canfail,Pred|Rest],[tag:write_unindent,while(not(Pred))|TextRest]):-
+    is_fact(Pred),
+    repeat_pattern_to_text(Rest,TextRest).
 repeat_pattern_to_text([tag:canfail,Pred|Rest],[tag:write_unindent,while(not_successful(Pred))|TextRest]):-
     repeat_pattern_to_text(Rest,TextRest).
 repeat_pattern_to_text([Pred|Rest],[Pred|TextRest]):-

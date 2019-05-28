@@ -76,7 +76,7 @@ separate_words([C|Rest],Current,[Word|Words]):-
     atom_chars(Word,Current),
     separate_words(Rest,[],Words).
 separate_words([C|Rest],Current,[Word|Words]):-
-    upper_lower(C, Lower),
+    upper_lower(C, Lower),%upcase_atom is true for both lower and upper case
     atom_chars(Word,Current),
     char_code(Atom,Lower),
     separate_words(Rest,[Atom],Words).
@@ -127,3 +127,9 @@ condition_description(A=<B,Desc):-
 condition_description(A>=B,Desc):-
     atom_concat(A,' is bigger or equal to ',Atom1),
     atom_concat(Atom1,B,Desc).
+
+%Capitalize atom (Make first character uppercase)
+capitalize(Atom,Capitalized):-
+    atom_chars(Atom,[C|Rest]),
+    upcase_atom(C, Up),
+    atom_chars(Capitalized,[Up|Rest]).
