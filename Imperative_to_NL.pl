@@ -9,8 +9,9 @@ prolog_to_nl(Name/0):-
     prolog_to_imperative_info(Name/0,_,Body),!,
     delete_tags_from_list(Body,Clean_Body),
     process_body(Clean_Body,Processed),!,
-    process_subjects(Name,Processed,Processed2),!,
-    process_phrases(Processed2,Text),!,
+    process_punctuation(Processed,Processed2),!,
+    process_subjects(Name,Processed2,Processed3),!,
+    process_phrases(Processed3,Text),!,
     nl,nl,
     write(Text).
 prolog_to_nl(Name/Arity):-
@@ -18,8 +19,42 @@ prolog_to_nl(Name/Arity):-
     process_header(Head,Header),
     delete_tags_from_list(Body,Clean_Body),
     process_body(Clean_Body,Processed),!,
-    process_subjects(Name,Processed,Processed2),!,
-    process_phrases([Header|Processed2],Text),!,
+    process_punctuation(Processed,Processed2),!,
+    process_subjects(Name,Processed2,Processed3),!,
+    process_phrases([Header|Processed3],Text),!,
+    nl,nl,
+    write(Text).
+
+%Developer version
+prolog_to_nl_dev(Name/0):-
+    prolog_to_imperative_info(Name/0,_,Body),!,
+    nl,nl,
+    write(body:Body),nl,
+    delete_tags_from_list(Body,Clean_Body),
+    write(clean:Clean_Body),nl,
+    process_body(Clean_Body,Processed),!,
+    write(body:Processed),nl,
+    process_punctuation(Processed,Processed2),!,
+    write(punctuation:Processed2),nl,
+    process_subjects(Name,Processed2,Processed3),!,
+    write(subjects:Processed3),nl,
+    process_phrases(Processed3,Text),!,
+    nl,nl,
+    write(Text).
+prolog_to_nl_dev(Name/Arity):-
+    prolog_to_imperative_info(Name/Arity,Head,Body),
+    write(body:Body),nl,
+    process_header(Head,Header),
+    write(header:Header),nl,
+    delete_tags_from_list(Body,Clean_Body),
+    write(clean:Clean_Body),nl,
+    process_body(Clean_Body,Processed),!,
+    write(body:Processed),nl,
+    process_punctuation(Processed,Processed2),!,
+    write(punctuation:Processed2),nl,
+    process_subjects(Name,Processed2,Processed3),!,
+    write(subjects:Processed3),nl,
+    process_phrases([Header|Processed3],Text),!,
     nl,nl,
     write(Text).
 
@@ -58,17 +93,17 @@ process_clause([for(Iteration)|Rest],[Desc,tag:subject|DescRest]):-
     process_clause(Rest,DescRest).
 process_clause([do|Rest],[tag:subject|DescRest]):-
     process_clause(Rest,DescRest).
-process_clause([while(not(Pred))|Rest],['. If',Desc|DescRest]):-
+process_clause([while(not(Pred))|Rest],[tag:end_of_phrase,'if',Desc|DescRest]):-
     Pred=..[Name|Args],
     atomic_list_concat(Args,', ', AtomArgs),
     atom_concat(Name,' ',Atom1),
     atom_concat(Atom1,AtomArgs,Atom2),
-    atom_concat(Atom2,' exists, it stops. Otherwise it repeats the same process',Desc),
+    atom_concat(Atom2,' exists, it stops, otherwise it repeats the same process',Desc),
     process_clause(Rest,DescRest).
-process_clause([while(not_successful(Pred))|Rest],['. If',tag:subject,Desc|DescRest]):-
+process_clause([while(not_successful(Pred))|Rest],[tag:end_of_phrase,'if',tag:subject,Desc,tag:end_of_phrase|DescRest]):-
     procedure_description(Pred,infinitive,ProdDesc),
     atom_concat('manages to successfully ',ProdDesc,Atom1),
-    atom_concat(Atom1,', it stops. Otherwise it repeats the same process',Desc),
+    atom_concat(Atom1,', it stops, otherwise, it repeats the same process',Desc),
     process_clause(Rest,DescRest).
 process_clause([tag:X|Rest],[tag:X|DescRest]):-
     process_clause(Rest,DescRest).
@@ -94,6 +129,32 @@ process_header(Head,[Header]):-
     pretty_variables(Args,PrettyArgs),
     atom_concat(Atom,PrettyArgs,Header).
 
+%Process end_of_phrase tags and capitalize appropriately all lists in list
+process_punctuation([List|Rest],Processed):-
+    split_phrases(List,Phrases),!,
+    capitalize_phrases(Phrases,Capitalized),
+    process_punctuation(Rest,PhrasesRest),
+    append(Capitalized,PhrasesRest,Processed).
+process_punctuation([],[]).
+
+%Process end_of_phrase tags and capitalize appropriately
+split_phrases(List,Phrases):-
+    split_phrases(List,[],Phrases).
+split_phrases([tag:end_of_phrase|Rest],List,[List|SplitRest]):-
+    split_phrases(Rest,[],SplitRest).
+split_phrases([Head|Rest],List,Split):-
+    append(List,[Head],NewList),
+    split_phrases(Rest,NewList,Split).
+split_phrases([],List,[List]).
+
+%Upper case the first character of phrases except for subjects
+capitalize_phrases([[tag:subject|Rest]|RestList],[[tag:subject|Rest]|CapitalizedRest]):-
+    capitalize_phrases(RestList,CapitalizedRest).
+capitalize_phrases([[Head|Rest]|RestList],[[Capitalized|Rest]|CapitalizedRest]):-
+    capitalize(Head,Capitalized),
+    capitalize_phrases(RestList,CapitalizedRest).
+capitalize_phrases([],[]).
+
 %Process subject tags in lists
 process_subjects(Name,[List|Rest],[Processed|ProcessedRest]):-
     process_subject(Name,List,Processed,0),
@@ -114,8 +175,7 @@ process_subject(_,[],[],_).
 %Process lists of atoms into phrases
 process_phrases([List|Rest],Text):-
     atomic_list_concat(List, ' ', Atom1),
-    atom_concat(Atom1,'. ',Atom2),
-    capitalize(Atom2,Phrase),
+    atom_concat(Atom1,'. ',Phrase),
     process_phrases(Rest,Phrases),
     atom_concat(Phrase,Phrases,Text).
 process_phrases([],'').
