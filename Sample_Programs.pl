@@ -66,6 +66,9 @@ printx(X):-
 printx(X):-
     write(X).
 
+test_pred:-
+    inputPassword.
+
 removeOddNumbers([N|Rest],[N|List]):-
     0 is N mod 2,
     removeOddNumbers(Rest,List).

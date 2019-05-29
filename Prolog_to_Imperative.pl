@@ -29,7 +29,7 @@ prolog_to_imperative_dev(Name/Arity):-
     process_writes_in_list(Formatted_Text,Pretty_Text),!,
     write(pretty:Pretty_Text),nl,nl,
     listing(Pred),nl,
-    write(Head),write(' {'),nl,
+    write(Head),write('{'),nl,
     print_formatted_predicate(java,Pretty_Text),
     write('}'),!.
 prolog_to_imperative(Name/Arity,java):-
@@ -205,6 +205,9 @@ create_variables_dictionary([Head|Rest],[Head:Var|Dic],List):-
 create_variables_dictionary([],[],_).
 
 %Head is predicate head with translated variables
+process_predicate_head(Pred,_,Head):-
+    Pred=..[Name|[]],
+    Head=..[Name|['']].
 process_predicate_head(Pred,VarsDic,Head):-
     Pred=..[Name|Args],
     translate_head_args(Args,VarsDic,TransArgs),
@@ -266,6 +269,11 @@ process_patterns([tag:if_not,\+Pred|Rest],VarsDic,[tag:if_not,TransPred|Processe
     Pred=..[Name|Args],
     translate_variables(Args,VarsDic,TransArgs),
     TransPred=..[Name|TransArgs],
+    process_patterns(Rest,VarsDic,ProcessedRest).
+process_patterns([Pred|Rest],VarsDic,[TransPred|ProcessedRest]):-
+    Pred=..[Name|[]],
+    Name\=nl,
+    TransPred=..[Name|['']],
     process_patterns(Rest,VarsDic,ProcessedRest).
 process_patterns([Pred|Rest],VarsDic,[TransPred|ProcessedRest]):-
     Pred=..[Name|Args],

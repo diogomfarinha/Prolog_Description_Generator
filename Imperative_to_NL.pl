@@ -88,6 +88,14 @@ process_body([Head|Rest],[Processed|ProcessedRest]):-
 
 %Processes individial code snippets of imperative-style description into natural language
 process_snippet([for(Variables:Predicate)|Rest],[Desc,tag:subject|DescRest]):-
+    Variables=..[_|[Var]],
+    atom_concat('for each ',Var,Atom1),
+    atom_concat(Atom1,' that satisfies ',Atom2),
+    term_string(Predicate,PredString),
+    atom_concat(Atom2,PredString,Atom3),
+    atom_concat(Atom3,',',Desc),
+    process_snippet(Rest,DescRest).
+process_snippet([for(Variables:Predicate)|Rest],[Desc,tag:subject|DescRest]):-
     Variables=..[_|Vars],
     pretty_enumeration(Vars,PrettyVars),
     atom_concat('for each ',PrettyVars,Atom1),
@@ -125,7 +133,7 @@ process_snippet([if(Condition)|Rest],[Desc,tag:subject|DescRest]):-
     process_snippet(Rest,DescRest).
 process_snippet([tag:X|Rest],[tag:X|DescRest]):-
     process_snippet(Rest,DescRest).
-process_snippet([else|Rest],[', otherwise,',tag:subject|DescRest]):-
+process_snippet([else|Rest],[tag:comma,'otherwise',tag:subject|DescRest]):-
     process_snippet(Rest,DescRest).
 process_snippet([Pred|Rest],[Desc,tag:conjunction,'breaks line',tag:conjunction|DescRest]):-
     compound(Pred),
@@ -198,14 +206,32 @@ process_conjunctions([List|Rest],[Processed|ProcessedRest]):-
 process_conjunctions([],[]).
 
 %Process conjunctions in phrase to unite text excerpts coherently
+process_conjunctions([X,tag:conjunction,tag:comma|Rest],List,[Pretty,NewX|Processed]):-
+    atom_concat(X,',',NewX),
+    pretty_enumeration(List,Pretty),
+    process_conjunctions(Rest,[],Processed).
+process_conjunctions([X,tag:conjunction,tag:comma|Rest],[],[NewX|Processed]):-
+    atom_concat(X,',',NewX),
+    process_conjunctions(Rest,[],Processed).
 process_conjunctions([X,tag:conjunction|Rest],List,Processed):-
     append(List,[X],NewList),
     process_conjunctions(Rest,NewList,Processed).
+process_conjunctions([X,tag:comma|Rest],[],[NewHead|Processed]):-
+    atom_concat(X,',',NewHead),
+    process_conjunctions(Rest,[],Processed).
+process_conjunctions([X,tag:comma|Rest],List,[Pretty,NewHead|Processed]):-
+    atom_concat(X,',',NewHead),
+    pretty_enumeration(List,Pretty),
+    process_conjunctions(Rest,[],Processed).
 process_conjunctions([Head|Rest],[],[Head|Processed]):-
     process_conjunctions(Rest,[],Processed).
 process_conjunctions([Head|Rest],List,[Pretty,Head|Processed]):-
     pretty_enumeration(List,Pretty),
     process_conjunctions(Rest,[],Processed).
+process_conjunctions([tag:conjunction],List,[Pretty]):-
+    pretty_enumeration(List,Pretty).
+process_conjunctions([tag:conjunction],[],[]).
+process_conjunctions([],[],[]).
 process_conjunctions([],List,[Pretty]):-
     pretty_enumeration(List,Pretty).
 

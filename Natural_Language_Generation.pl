@@ -35,7 +35,8 @@ procedure_description(Predicate,present,Desc):-
     Predicate=..[Name|Args],
     Name=read,
     pretty_enumeration(Args,PrettyArgs),
-    atom_concat('prompts the user for ',PrettyArgs,Desc).
+    atom_concat('reads ',PrettyArgs,Atom),
+    atom_concat(Atom,' from user input',Desc).
 procedure_description(Predicate,infinitive,Desc):-
     Predicate=..[Name|Args],
     Name=read,
@@ -49,6 +50,13 @@ procedure_description(Predicate,infinitive,Desc):-
     generate_description(Predicate,infinitive,Desc),!.
 
 %Automatic generation of natural language descriptions
+generate_description(Predicate,Conjugation,Desc):-
+    Predicate=..[Name|['']],%Handle special case of 0 arguments made pretty for imperative descriptions
+    NewPred=..[Name|[]],
+    generate_description(NewPred,Conjugation,Atom),
+    atom_length(Atom, Length),
+    Len is Length-1,
+    sub_atom(Atom,0,Len,_,Desc).%Remove useless space since there are no arguments
 generate_description(Predicate,present,Desc):-
     Predicate=..[Name|Args],
     atom_chars(Name, CharList),
