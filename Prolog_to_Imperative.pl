@@ -4,34 +4,6 @@
 prolog_to_imperative(Pred):-
     prolog_to_imperative(Pred,java).
     %prolog_to_imperative_dev(Pred).
-prolog_to_imperative_dev(Name/Arity):-
-    nl,
-    get_predicate(Name/Arity,Pred),
-    write(pred:Pred),nl,
-    get_all_rules(Pred,Rules),
-    write(rules:Rules),nl,
-    get_patterns(Pred,Rules,Patterns),
-    write(patterns:Patterns),nl,
-    eliminate_iteration_redundancy(Patterns,Filtered_Patterns),
-    write(filtered:Filtered_Patterns),nl,
-    get_variables_dictionary(Filtered_Patterns,VarsDic),!,
-    write(varsdic:VarsDic),nl,
-    process_predicate_head(Pred,VarsDic,Head),
-    write(head:Head),nl,
-    process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
-    write(processed:Processed_Patterns),nl,
-    process_loop_coherence(Processed_Patterns,Coherent_Patterns),
-    write(coherent:Coherent_Patterns),nl,
-    patterns_to_text(Coherent_Patterns,Text_List),
-    write(text:Text_List),nl,
-    process_ifs_in_list(Text_List,Formatted_Text),!,
-    write(formatted:Formatted_Text),nl,
-    process_writes_in_list(Formatted_Text,Pretty_Text),!,
-    write(pretty:Pretty_Text),nl,nl,
-    listing(Pred),nl,
-    write(Head),write('{'),nl,
-    print_formatted_predicate(java,Pretty_Text),
-    write('}'),!.
 prolog_to_imperative(Name/Arity,java):-
     nl,
     get_predicate(Name/Arity,Pred),
@@ -65,6 +37,36 @@ prolog_to_imperative(Name/Arity,python):-
     listing(Pred),nl,
     write(Head),write(':'),nl,
     print_formatted_predicate(python,Pretty_Text),!.
+
+%Developer version
+prolog_to_imperative_dev(Name/Arity):-
+    nl,
+    get_predicate(Name/Arity,Pred),
+    write(pred:Pred),nl,
+    get_all_rules(Pred,Rules),
+    write(rules:Rules),nl,
+    get_patterns(Pred,Rules,Patterns),
+    write(patterns:Patterns),nl,
+    eliminate_iteration_redundancy(Patterns,Filtered_Patterns),
+    write(filtered:Filtered_Patterns),nl,
+    get_variables_dictionary(Filtered_Patterns,VarsDic),!,
+    write(varsdic:VarsDic),nl,
+    process_predicate_head(Pred,VarsDic,Head),
+    write(head:Head),nl,
+    process_patterns_list(Filtered_Patterns,VarsDic,Processed_Patterns),
+    write(processed:Processed_Patterns),nl,
+    process_loop_coherence(Processed_Patterns,Coherent_Patterns),
+    write(coherent:Coherent_Patterns),nl,
+    patterns_to_text(Coherent_Patterns,Text_List),
+    write(text:Text_List),nl,
+    process_ifs_in_list(Text_List,Formatted_Text),!,
+    write(formatted:Formatted_Text),nl,
+    process_writes_in_list(Formatted_Text,Pretty_Text),!,
+    write(pretty:Pretty_Text),nl,nl,
+    listing(Pred),nl,
+    write(Head),write('{'),nl,
+    print_formatted_predicate(java,Pretty_Text),
+    write('}'),!.
 
 %Converts Prolog programs into imperative-style descriptions
 prolog_to_imperative_info(Name/Arity,Head,Pretty_Text):-

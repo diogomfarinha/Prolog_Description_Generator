@@ -9,7 +9,8 @@ prolog_to_nl(Name/0):-
     prolog_to_imperative_info(Name/0,_,Body),!,
     delete_tags_from_list(Body,Clean_Body),
     process_body(Clean_Body,Processed),!,
-    filter_subjects(Processed,Filtered),!,
+    process_loop_conjunctions(Processed,Loop),!,
+    filter_subjects(Loop,Filtered),!,
     process_punctuation(Filtered,Processed2),!,
     process_conjunctions(Processed2,Processed3),!,
     process_subjects(Name,Processed3,Processed4),!,
@@ -21,7 +22,8 @@ prolog_to_nl(Name/Arity):-
     process_header(Head,Header),
     delete_tags_from_list(Body,Clean_Body),
     process_body(Clean_Body,Processed),!,
-    filter_subjects(Processed,Filtered),!,
+    process_loop_conjunctions(Processed,Loop),!,
+    filter_subjects(Loop,Filtered),!,
     process_punctuation(Filtered,Processed2),!,
     process_conjunctions(Processed2,Processed3),!,
     process_subjects(Name,Processed3,Processed4),!,
@@ -38,7 +40,9 @@ prolog_to_nl_dev(Name/0):-
     writeq(clean:Clean_Body),nl,
     process_body(Clean_Body,Processed),!,
     writeq(body:Processed),nl,
-    filter_subjects(Processed,Filtered),!,
+    process_loop_conjunctions(Processed,Loop),!,
+    writeq(loop:Loop),nl,
+    filter_subjects(Loop,Filtered),!,
     writeq(filtered:Filtered),nl,
     process_punctuation(Filtered,Processed2),!,
     writeq(punctuation:Processed2),nl,
@@ -59,7 +63,9 @@ prolog_to_nl_dev(Name/Arity):-
     writeq(clean:Clean_Body),nl,
     process_body(Clean_Body,Processed),!,
     writeq(body:Processed),nl,
-    filter_subjects(Processed,Filtered),!,
+    process_loop_conjunctions(Processed,Loop),!,
+    writeq(loop:Loop),nl,
+    filter_subjects(Loop,Filtered),!,
     writeq(filtered:Filtered),nl,
     process_punctuation(Filtered,Processed2),!,
     writeq(punctuation:Processed2),nl,
@@ -87,22 +93,20 @@ process_body([Head|Rest],[Processed|ProcessedRest]):-
     process_snippet(Rest,ProcessedRest).
 
 %Processes individial code snippets of imperative-style description into natural language
-process_snippet([for(Variables:Predicate)|Rest],[Desc,tag:subject|DescRest]):-
+process_snippet([for(Variables:Predicate)|Rest],[Desc,tag:loop_conjunction,tag:subject|DescRest]):-
     Variables=..[_|[Var]],
     atom_concat('for each ',Var,Atom1),
     atom_concat(Atom1,' that satisfies ',Atom2),
     term_string(Predicate,PredString),
-    atom_concat(Atom2,PredString,Atom3),
-    atom_concat(Atom3,',',Desc),
+    atom_concat(Atom2,PredString,Desc),
     process_snippet(Rest,DescRest).
-process_snippet([for(Variables:Predicate)|Rest],[Desc,tag:subject|DescRest]):-
+process_snippet([for(Variables:Predicate)|Rest],[Desc,tag:loop_conjunction,tag:subject|DescRest]):-
     Variables=..[_|Vars],
     pretty_enumeration(Vars,PrettyVars),
     atom_concat('for each ',PrettyVars,Atom1),
     atom_concat(Atom1,' that satisfy ',Atom2),
     term_string(Predicate,PredString),
-    atom_concat(Atom2,PredString,Atom3),
-    atom_concat(Atom3,',',Desc),
+    atom_concat(Atom2,PredString,Desc),
     process_snippet(Rest,DescRest).
 process_snippet([for(Iteration)|Rest],[Desc,tag:subject|DescRest]):-
     atomic_list_concat(List,' ',Iteration),
@@ -156,6 +160,38 @@ process_header(Head,[Header]):-
     pretty_enumeration(Args,PrettyArgs),
     atom_concat(Atom,PrettyArgs,Header).
 
+%Process loop conjunction tags in list of phrases
+process_loop_conjunctions([List|Rest],[Processed|ProcessedRest]):-
+    process_loop_conjunctions(List,[],Processed),
+    process_loop_conjunctions(Rest,ProcessedRest).
+process_loop_conjunctions([],[]).
+
+%Process loop conjunction tags in phrase to unite multiple loops coherently
+%Desc,tag:loop_conjunction,tag:subject
+process_loop_conjunctions([Desc,tag:loop_conjunction,Tag|Rest],List,Processed):-
+    append(List,[Desc,Tag],NewList),
+    process_loop_conjunctions(Rest,NewList,Processed).
+process_loop_conjunctions([Head|Rest],[],[Head|Processed]):-
+    process_loop_conjunctions(Rest,[],Processed).
+process_loop_conjunctions([Head|Rest],List,Processed):-
+    pretty_loop_conjunctions(List,Pretty),
+    append(Pretty,[Head],NewList),
+    process_loop_conjunctions(Rest,[],ProcessedRest),
+    append(NewList,ProcessedRest,Processed).
+process_loop_conjunctions([],List,Pretty):-
+    pretty_loop_conjunctions(List,Pretty).
+    
+%Pretty loop conjunction descriptions
+pretty_loop_conjunctions([Desc,Tag],[NewDesc,Tag]):-
+    atom_concat(Desc,',',NewDesc).
+pretty_loop_conjunctions([Desc1,Tag1,Desc2,Tag2],[NewDesc1,Tag1,NewDesc2,Tag2]):-
+    atom_concat(Desc1,' and',NewDesc1),
+    atom_concat(Desc2,',',NewDesc2).
+pretty_loop_conjunctions([Desc,Tag|Rest],[NewDesc,Tag|PrettyRest]):-
+    atom_concat(Desc,',',NewDesc),
+    pretty_loop_conjunctions(Rest,PrettyRest).
+pretty_loop_conjunctions([],[]).
+
 %Filter redudant subject tags
 filter_subjects([List|Rest],[Filtered|FilteredRest]):-
     remove_extra_subjects(List,Filtered),
@@ -199,13 +235,13 @@ capitalize_phrases([[]|RestList],CapitalizedRest):-
     capitalize_phrases(RestList,CapitalizedRest).
 capitalize_phrases([],[]).
 
-%Process conjunctions in list of phrases
+%Process conjunction tags in list of phrases
 process_conjunctions([List|Rest],[Processed|ProcessedRest]):-
     process_conjunctions(List,[],Processed),
     process_conjunctions(Rest,ProcessedRest).
 process_conjunctions([],[]).
 
-%Process conjunctions in phrase to unite text excerpts coherently
+%Process conjunction tags in phrase to unite text excerpts coherently
 process_conjunctions([X,tag:conjunction,tag:comma|Rest],List,[Pretty,NewX|Processed]):-
     atom_concat(X,',',NewX),
     pretty_enumeration(List,Pretty),
