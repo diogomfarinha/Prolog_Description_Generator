@@ -83,83 +83,85 @@ delete_tags(List,Clean_List):-
 
 %Processes body of imperative-style description into natural language
 process_body([Head|Rest],[Processed|ProcessedRest]):-
-    process_clause(Head,Processed),
-    process_clause(Rest,ProcessedRest).
+    process_snippet(Head,Processed),
+    process_snippet(Rest,ProcessedRest).
 
-%Processes individial clauses of imperative-style description into natural language
-process_clause([for(Variables:Predicate)|Rest],[Desc,tag:subject|DescRest]):-
+%Processes individial code snippets of imperative-style description into natural language
+process_snippet([for(Variables:Predicate)|Rest],[Desc,tag:subject|DescRest]):-
     Variables=..[_|Vars],
-    pretty_variables(Vars,PrettyVars),
+    pretty_enumeration(Vars,PrettyVars),
     atom_concat('for each ',PrettyVars,Atom1),
     atom_concat(Atom1,' that satisfy ',Atom2),
     term_string(Predicate,PredString),
     atom_concat(Atom2,PredString,Atom3),
     atom_concat(Atom3,',',Desc),
-    process_clause(Rest,DescRest).
-process_clause([for(Iteration)|Rest],[Desc,tag:subject|DescRest]):-
+    process_snippet(Rest,DescRest).
+process_snippet([for(Iteration)|Rest],[Desc,tag:subject|DescRest]):-
     atomic_list_concat(List,' ',Iteration),
     delete(List,in,[Head,Tail]),
     atom_concat('for each ',Head,Atom1),
     atom_concat(Atom1,' that belongs to ',Atom2),
     atom_concat(Atom2,Tail,Atom3),
     atom_concat(Atom3,',',Desc),
-    process_clause(Rest,DescRest).
-process_clause([do|Rest],[tag:subject|DescRest]):-
-    process_clause(Rest,DescRest).
-process_clause([while(not(Pred))|Rest],[tag:end_of_phrase,'if',Desc,tag:end_of_phrase|DescRest]):-
+    process_snippet(Rest,DescRest).
+process_snippet([do|Rest],[tag:subject|DescRest]):-
+    process_snippet(Rest,DescRest).
+process_snippet([while(not(Pred))|Rest],[tag:end_of_phrase,'if',Desc,tag:end_of_phrase|DescRest]):-
     Pred=..[Name|Args],
     atomic_list_concat(Args,', ', AtomArgs),
     atom_concat(Name,' ',Atom1),
     atom_concat(Atom1,AtomArgs,Atom2),
     atom_concat(Atom2,' exists, it stops, otherwise it repeats the same process',Desc),
-    process_clause(Rest,DescRest).
-process_clause([while(not_successful(Pred))|Rest],[tag:end_of_phrase,'if',tag:subject,Desc,tag:end_of_phrase|DescRest]):-
+    process_snippet(Rest,DescRest).
+process_snippet([while(not_successful(Pred))|Rest],[tag:end_of_phrase,'if',tag:subject,Desc,tag:end_of_phrase|DescRest]):-
     procedure_description(Pred,infinitive,ProdDesc),
     atom_concat('manages to successfully ',ProdDesc,Atom1),
     atom_concat(Atom1,', it stops, otherwise, it repeats the same process',Desc),
-    process_clause(Rest,DescRest).
-process_clause([if(Condition)|Rest],[Desc,tag:subject|DescRest]):-
+    process_snippet(Rest,DescRest).
+process_snippet([if(Condition)|Rest],[Desc,tag:subject|DescRest]):-
     condition_description(Condition,ProcessedCon),
     atom_concat('if ',ProcessedCon,Atom1),
     atom_concat(Atom1,' then',Desc),
-    process_clause(Rest,DescRest).
-process_clause([tag:X|Rest],[tag:X|DescRest]):-
-    process_clause(Rest,DescRest).
-process_clause([else|Rest],[', otherwise,',tag:subject|DescRest]):-
-    process_clause(Rest,DescRest).
-process_clause([Pred|Rest],[Desc,tag:conjunction,'breaks line',tag:conjunction|DescRest]):-
+    process_snippet(Rest,DescRest).
+process_snippet([tag:X|Rest],[tag:X|DescRest]):-
+    process_snippet(Rest,DescRest).
+process_snippet([else|Rest],[', otherwise,',tag:subject|DescRest]):-
+    process_snippet(Rest,DescRest).
+process_snippet([Pred|Rest],[Desc,tag:conjunction,'breaks line',tag:conjunction|DescRest]):-
     compound(Pred),
     Pred=..[Name|_],
     Name=print_line,
     procedure_description(Pred,present,Desc),!,
-    process_clause(Rest,DescRest).
-process_clause([Pred|Rest],[Desc,tag:conjunction|DescRest]):-
+    process_snippet(Rest,DescRest).
+process_snippet([Pred|Rest],[Desc,tag:conjunction|DescRest]):-
     compound(Pred),
     procedure_description(Pred,present,Desc),!,
-    process_clause(Rest,DescRest).
-process_clause([Head|Rest],[Head|DescRest]):-
-    process_clause(Rest,DescRest).
-process_clause([],[]).
+    process_snippet(Rest,DescRest).
+process_snippet([Head|Rest],[Head|DescRest]):-
+    process_snippet(Rest,DescRest).
+process_snippet([],[]).
 
 %Process header of natural language description
 process_header(Head,[Header]):-
     Head=..[Name|Args],
     atom_concat(Name,' receives ',Atom),
-    pretty_variables(Args,PrettyArgs),
+    pretty_enumeration(Args,PrettyArgs),
     atom_concat(Atom,PrettyArgs,Header).
 
 %Filter redudant subject tags
 filter_subjects([List|Rest],[Filtered|FilteredRest]):-
-    filter_subject(List,Filtered),
+    remove_extra_subjects(List,Filtered),
     filter_subjects(Rest,FilteredRest).
 filter_subjects([],[]).
-filter_subject([tag:subject,tag:subject|Rest],Filtered):-
-    filter_subject([tag:subject|Rest],Filtered).
-filter_subject([tag:subject,X,tag:subject|Rest],[X|Filtered]):-
-    filter_subject([tag:subject|Rest],Filtered).
-filter_subject([Head|Rest],[Head|Filtered]):-
-    filter_subject(Rest,Filtered).
-filter_subject([],[]).
+
+%Remove extra subject tags in phrase
+remove_extra_subjects([tag:subject,tag:subject|Rest],Filtered):-
+    remove_extra_subjects([tag:subject|Rest],Filtered).
+remove_extra_subjects([tag:subject,X,tag:subject|Rest],[X|Filtered]):-
+    remove_extra_subjects([tag:subject|Rest],Filtered).
+remove_extra_subjects([Head|Rest],[Head|Filtered]):-
+    remove_extra_subjects(Rest,Filtered).
+remove_extra_subjects([],[]).
 
 %Process end_of_phrase tags and capitalize appropriately all lists in list
 process_punctuation([List|Rest],Processed):-
@@ -189,21 +191,23 @@ capitalize_phrases([[]|RestList],CapitalizedRest):-
     capitalize_phrases(RestList,CapitalizedRest).
 capitalize_phrases([],[]).
 
-%Process conjunctions to unite text excerpts coherently
+%Process conjunctions in list of phrases
 process_conjunctions([List|Rest],[Processed|ProcessedRest]):-
     process_conjunctions(List,[],Processed),
     process_conjunctions(Rest,ProcessedRest).
 process_conjunctions([],[]).
+
+%Process conjunctions in phrase to unite text excerpts coherently
 process_conjunctions([X,tag:conjunction|Rest],List,Processed):-
     append(List,[X],NewList),
     process_conjunctions(Rest,NewList,Processed).
 process_conjunctions([Head|Rest],[],[Head|Processed]):-
     process_conjunctions(Rest,[],Processed).
 process_conjunctions([Head|Rest],List,[Pretty,Head|Processed]):-
-    pretty_variables(List,Pretty),
+    pretty_enumeration(List,Pretty),
     process_conjunctions(Rest,[],Processed).
 process_conjunctions([],List,[Pretty]):-
-    pretty_variables(List,Pretty).
+    pretty_enumeration(List,Pretty).
 
 %Process subject tags in lists
 process_subjects(Name,[List|Rest],[Processed|ProcessedRest]):-

@@ -34,12 +34,12 @@ procedure_description(Predicate,infinitive,Desc):-
 procedure_description(Predicate,present,Desc):-
     Predicate=..[Name|Args],
     Name=read,
-    pretty_variables(Args,PrettyArgs),
+    pretty_enumeration(Args,PrettyArgs),
     atom_concat('prompts the user for ',PrettyArgs,Desc).
 procedure_description(Predicate,infinitive,Desc):-
     Predicate=..[Name|Args],
     Name=read,
-    pretty_variables(Args,PrettyArgs),
+    pretty_enumeration(Args,PrettyArgs),
     atom_concat('prompt the user for ',PrettyArgs,Desc).
 %Generate description in present tense 
 procedure_description(Predicate,present,Desc):-
@@ -54,14 +54,14 @@ generate_description(Predicate,present,Desc):-
     atom_chars(Name, CharList),
     separate_words(CharList,Words),
     conjugate_verbs(Words,present,Conjugated),!,
-    pretty_variables(Args,PrettyArgs),
+    pretty_enumeration(Args,PrettyArgs),
     append(Conjugated,[PrettyArgs],DescList),
     atomic_list_concat(DescList,' ', Desc).
 generate_description(Predicate,infinitive,Desc):-
     Predicate=..[Name|Args],
     atom_chars(Name, CharList),
     separate_words(CharList,Words),
-    pretty_variables(Args,PrettyArgs),
+    pretty_enumeration(Args,PrettyArgs),
     append(Words,[PrettyArgs],DescList),
     atomic_list_concat(DescList,' ', Desc).
 
@@ -100,13 +100,13 @@ conjugate_verbs([Word|Rest],Tense,[Word|ConjugatedRest]):-
 conjugate_verbs([],_,[]).
 
 %Make variable listing more readable for natural language
-pretty_variables([],'').
-pretty_variables([Var],Var).
-pretty_variables([Head,Tail],Text):-
+pretty_enumeration([],'').
+pretty_enumeration([Var],Var).
+pretty_enumeration([Head,Tail],Text):-
     atom_concat(Head, ' and ', Atom1),
     atom_concat(Atom1,Tail,Text).
-pretty_variables([Head|Rest],Text):-
-    pretty_variables(Rest,TextRest),
+pretty_enumeration([Head|Rest],Text):-
+    pretty_enumeration(Rest,TextRest),
     atom_concat(Head,', ',Atom1),
     atom_concat(Atom1,TextRest,Text).
 
