@@ -145,6 +145,15 @@ process_snippet([Pred|Rest],[Desc,tag:conjunction,'breaks line',tag:conjunction|
     Name=print_line,
     procedure_description(Pred,present,Desc),!,
     process_snippet(Rest,DescRest).
+process_snippet([Pred|Rest],[FullDesc,tag:conjunction|DescRest]):-
+    compound(Pred),
+    Pred=..[Name|Args],
+    Name=read,
+    procedure_description(Pred,present,Desc),!,
+    get_context(Args,Rest,Context),!,
+    pretty_enumeration(Args,PrettyArgs),
+    atomic_list_concat([Desc,Context,PrettyArgs],' ',FullDesc),
+    process_snippet(Rest,DescRest).
 process_snippet([Pred|Rest],[Desc,tag:conjunction|DescRest]):-
     compound(Pred),
     procedure_description(Pred,present,Desc),!,
@@ -152,6 +161,35 @@ process_snippet([Pred|Rest],[Desc,tag:conjunction|DescRest]):-
 process_snippet([Head|Rest],[Head|DescRest]):-
     process_snippet(Rest,DescRest).
 process_snippet([],[]).
+
+%Get context from nouns in following predicates in list
+get_context(Args,[tag:_|Rest],Context):-
+    get_context(Args,Rest,Context).
+get_context(Args,[if(_)|Rest],Context):-
+    get_context(Args,Rest,Context).
+get_context(Args,[Head|Rest],Context):-
+    atom(Head),
+    get_context(Args,Rest,Context).
+get_context(Args,[for(_:Predicate)|_],Context):-
+    get_context_in_predicate(Args,Predicate,Context).
+get_context(Args,[while(not(Predicate))|_],Context):-
+    get_context_in_predicate(Args,Predicate,Context).
+get_context(Args,[while(not_successful(Predicate))|_],Context):-
+    get_context_in_predicate(Args,Predicate,Context).
+get_context(Args,[Predicate|_],Context):-
+    get_context_in_predicate(Args,Predicate,Context).
+get_context(Args,[_|Rest],Context):-
+    get_context(Args,Rest,Context).
+get_context(_,[],'').
+
+%Get context from predicate
+get_context_in_predicate(Args,Pred,Context):-
+    Pred=..[Name|PredArgs],
+    intersection(Args,PredArgs,Int),
+    Int\=[],
+    atom_chars(Name, CharList),
+    separate_words(CharList,Words),!,
+    get_first_noun(Words,Context).
 
 %Process header of natural language description
 process_header(Head,[Header]):-

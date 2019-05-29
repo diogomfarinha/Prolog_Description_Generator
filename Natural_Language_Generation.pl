@@ -3,45 +3,28 @@
 
 %Natural language descriptions of procedures
 %Prepared descriptions in both present tense and infinitive
-procedure_description(Predicate,present,Desc):-
+procedure_description(Predicate,Tense,Desc):-
     Predicate=..[Name|Args],
     Name=print,
-    remove_quotes_in_args(Args,Args2),
-    atomic_list_concat(Args2,'', AtomArgs),
-    atom_concat('prints \"',AtomArgs,Atom1),
-    atom_concat(Atom1,'\" on the console',Desc).
-procedure_description(Predicate,infinitive,Desc):-
-    Predicate=..[Name|Args],
-    Name=print,
-    remove_quotes_in_args(Args,Args2),
-    atomic_list_concat(Args2,'', AtomArgs),
-    atom_concat('print \"',AtomArgs,Atom1),
-    atom_concat(Atom1,'\" on the console',Desc).
-procedure_description(Predicate,present,Desc):-
+    remove_quotes_in_args(Args,CleanArgs),
+    atomic_list_concat(CleanArgs,'', AtomArgs),
+    conjugate(print,Tense,Conjugated),
+    atom_concat(Conjugated,' \"',Atom1),
+    atom_concat(Atom1,AtomArgs,Atom2),
+    atom_concat(Atom2,'\" on the console',Desc).
+procedure_description(Predicate,Tense,Desc):-
     Predicate=..[Name|Args],
     Name=print_line,
-    remove_quotes_in_args(Args,Args2),
-    atomic_list_concat(Args2,'', AtomArgs),
-    atom_concat('prints \"',AtomArgs,Atom1),
-    atom_concat(Atom1,'\" on the console',Desc).
-procedure_description(Predicate,infinitive,Desc):-
-    Predicate=..[Name|Args],
-    Name=print_line,
-    remove_quotes_in_args(Args,Args2),
-    atomic_list_concat(Args2,'', AtomArgs),
-    atom_concat('print \"',AtomArgs,Atom1),
-    atom_concat(Atom1,'\" on the console',Desc).
-procedure_description(Predicate,present,Desc):-
-    Predicate=..[Name|Args],
+    remove_quotes_in_args(Args,CleanArgs),
+    atomic_list_concat(CleanArgs,'', AtomArgs),
+    conjugate(print,Tense,Conjugated),
+    atom_concat(Conjugated,' \"',Atom1),
+    atom_concat(Atom1,AtomArgs,Atom2),
+    atom_concat(Atom2,'\" on the console',Desc).
+procedure_description(Predicate,Tense,Conjugation):-
+    Predicate=..[Name|_],
     Name=read,
-    pretty_enumeration(Args,PrettyArgs),
-    atom_concat('reads ',PrettyArgs,Atom),
-    atom_concat(Atom,' from user input',Desc).
-procedure_description(Predicate,infinitive,Desc):-
-    Predicate=..[Name|Args],
-    Name=read,
-    pretty_enumeration(Args,PrettyArgs),
-    atom_concat('prompt the user for ',PrettyArgs,Desc).
+    conjugate(read,Tense,Conjugation).
 %Generate description in present tense 
 procedure_description(Predicate,present,Desc):-
     generate_description(Predicate,present,Desc),!.
@@ -99,10 +82,10 @@ separate_words([],Current,[Word]):-
     atom_chars(Word,Current).
 
 %Conjugate verbs in list
-conjugate_verbs([Verb|Rest],present,[Conjugated|ConjugatedRest]):-
+conjugate_verbs([Verb|Rest],Tense,[Conjugated|ConjugatedRest]):-
     verb(Verb),
-    present_tense(Verb,Conjugated),
-    conjugate_verbs(Rest,present,ConjugatedRest).
+    conjugate(Verb,Tense,Conjugated),
+    conjugate_verbs(Rest,Tense,ConjugatedRest).
 conjugate_verbs([Word|Rest],Tense,[Word|ConjugatedRest]):-
     conjugate_verbs(Rest,Tense,ConjugatedRest).
 conjugate_verbs([],_,[]).
@@ -167,3 +150,9 @@ remove_quotation_chars(['"'|Rest],Removed):-
 remove_quotation_chars([C|Rest],[C|Removed]):-
     remove_quotation_chars(Rest,Removed).
 remove_quotation_chars([],[]).
+
+%Get first noun in list of words
+get_first_noun([Noun|_],Noun):-
+    noun(Noun).
+get_first_noun([_|Rest],Noun):-
+    get_first_noun(Rest,Noun).
