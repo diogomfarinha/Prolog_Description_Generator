@@ -30,7 +30,8 @@ displayStudents:-
     university(U),
     department(U,D),
     student(D,S),
-    write(S),nl.
+    write(S),nl,
+    fail.
 displayStudents.
 
 %Repeat loop
@@ -53,23 +54,6 @@ inputCredentials:-
     read(Password),
     password(Name,Password),
     write('Credentials accepted').
-
-%Recursive list iteration
-remove_from_list(X,[X|Rest],List):-
-    remove_from_list(X,Rest,List).
-remove_from_list(X,[Head|Rest],[Head|List]):-
-    X\=Head,
-    remove_from_list(X,Rest,List).
-remove_from_list(_,[],[]).
-
-%Recursive list iteration with if-else clauses
-removeNumbers([N|Rest],[N|List]):-
-    N>2,
-    removeNumbers(Rest,List).
-removeNumbers([N|Rest],List):-
-    N=<2,
-    removeNumbers(Rest,List).
-removeNumbers([],[]).
 
 %Recursive list iteration
 printList([Head|Rest]):-
@@ -100,7 +84,15 @@ findElements(N,[Head|Rest]):-
     findElements(N,Rest).
 findElements(_,[]).
 
-%Sucessive fail loops
+%Recursive list iteration definition. CASE NOT HANDLED AT THIS TIME
+remove_from_list(X,[X|Rest],List):-
+    remove_from_list(X,Rest,List).
+remove_from_list(X,[Head|Rest],[Head|List]):-
+    X\=Head,
+    remove_from_list(X,Rest,List).
+remove_from_list(_,[],[]).
+
+%Sucessive fail loops. CASE NOT HANDLED AT THIS TIME FOR NATURAL LANGUAGE DESCRIPTIONS
 printStudentsTwice:-
     student(_,S),
     write(S),nl,

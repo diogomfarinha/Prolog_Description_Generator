@@ -26,7 +26,7 @@ student(ibs,bernardo).
 student(ibs,rui).
 student(it,margarida).
 student(it,joao).
-sudent(math,manuel).
+student(math,manuel).
 student(math,afonso).
 
 name(michael).
