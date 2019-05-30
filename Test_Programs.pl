@@ -84,15 +84,7 @@ findElements(N,[Head|Rest]):-
     findElements(N,Rest).
 findElements(_,[]).
 
-%Recursive list iteration definition. CASE NOT HANDLED AT THIS TIME
-remove_from_list(X,[X|Rest],List):-
-    remove_from_list(X,Rest,List).
-remove_from_list(X,[Head|Rest],[Head|List]):-
-    X\=Head,
-    remove_from_list(X,Rest,List).
-remove_from_list(_,[],[]).
-
-%Sucessive fail loops. CASE NOT HANDLED AT THIS TIME FOR NATURAL LANGUAGE DESCRIPTIONS
+%Sucessive fail loops.
 printStudentsTwice:-
     student(_,S),
     write(S),nl,
@@ -102,5 +94,14 @@ printStudentsTwice:-
     write(S),nl,
     fail.
 printStudentsTwice.
+
+%Recursive list iteration definition. CASE NOT SUPPORTED AT THIS TIME
+remove_from_list(X,[X|Rest],List):-
+    remove_from_list(X,Rest,List).
+remove_from_list(X,[Head|Rest],[Head|List]):-
+    X\=Head,
+    remove_from_list(X,Rest,List).
+remove_from_list(_,[],[]).
+
 
  

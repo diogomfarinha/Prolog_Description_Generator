@@ -70,6 +70,8 @@ assert_if_not_exists(predicate_instantiated(X)):-
 assert_if_not_exists(_).
 
 %Predicate has more than one solution
+predicate_has_more_solutions(age(_,_)):- %%%%%%%%%%%%%%%% TESTING PURPOSES ONLY REMOVE LATER
+    !,fail.
 predicate_has_more_solutions(Pred):-
     is_fact(Pred).
 predicate_has_more_solutions(member(X,List)):-

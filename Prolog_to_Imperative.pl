@@ -336,6 +336,7 @@ iter_loop_description(Elements,for(Text)):-
     atom_concat(AtomElements,' in list',Text).
 
 %Describe a for loop with arguments and predicate
+for_loop_description([X],Predicate,for(X:Predicate)).
 for_loop_description(Arguments,Predicate,for(Text2:Predicate)):-
     Text2=..[''|Arguments].
 

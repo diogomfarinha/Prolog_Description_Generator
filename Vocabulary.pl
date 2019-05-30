@@ -25,3 +25,10 @@ noun('student').
 noun('name').
 noun('age').
 noun('status').
+
+%Phrase linking adverbs
+phrase_linker('then').
+phrase_linker('afterwards').
+phrase_linker('next').
+phrase_linker('subsequently').
+phrase_linker('consequently').

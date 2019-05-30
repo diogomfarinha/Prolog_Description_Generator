@@ -1,6 +1,7 @@
 :- ensure_loaded('Predicate_Library.pl').
 :- ensure_loaded('Prolog_to_Imperative.pl').
 :- ensure_loaded('Natural_Language_Generation.pl').
+:- ensure_loaded('Vocabulary.pl').
 
 %Converts Prolog predicates into imperative-style descriptions and then
 %into natural language descriptions.
@@ -90,12 +91,13 @@ delete_tags(List,Clean_List):-
 %Processes body of imperative-style description into natural language
 process_body([Head|Rest],[Processed|ProcessedRest]):-
     process_snippet(Head,Processed),
-    process_snippet(Rest,ProcessedRest).
+    process_body(Rest,ProcessedRest).
+process_body([],[]).
 
 %Processes individial code snippets of imperative-style description into natural language
-process_snippet([for(Variables:Predicate)|Rest],[Desc,tag:loop_conjunction,tag:subject|DescRest]):-
-    Variables=..[_|[Var]],
-    atom_concat('for each ',Var,Atom1),
+process_snippet([for(Variable:Predicate)|Rest],[Desc,tag:loop_conjunction,tag:subject|DescRest]):-
+    atom(Variable),
+    atom_concat('for each ',Variable,Atom1),
     atom_concat(Atom1,' that satisfies ',Atom2),
     term_string(Predicate,PredString),
     atom_concat(Atom2,PredString,Desc),
@@ -248,7 +250,8 @@ remove_extra_subjects([],[]).
 %Process end_of_phrase tags and capitalize appropriately all lists in list
 process_punctuation([List|Rest],Processed):-
     split_phrases(List,Phrases),!,
-    capitalize_phrases(Phrases,Capitalized),
+    add_phrase_linkers(Phrases,[],LinkedPhrases),!,
+    capitalize_phrases(LinkedPhrases,Capitalized),
     process_punctuation(Rest,PhrasesRest),
     append(Capitalized,PhrasesRest,Processed).
 process_punctuation([],[]).
@@ -262,6 +265,26 @@ split_phrases([Head|Rest],List,Split):-
     append(List,[Head],NewList),
     split_phrases(Rest,NewList,Split).
 split_phrases([],List,[List]).
+
+%Add linking adverbs to phrases
+add_phrase_linkers([Phrase],_,[['finally, it'|Phrase]]):-
+    \+member(tag:subject,Phrase),
+    \+member('if',Phrase).
+add_phrase_linkers([Phrase|Rest],LinkersUsed,[[Linker,tag:comma,'it'|Phrase]|ProcessedRest]):-
+    \+member(tag:subject,Phrase),
+    \+member('if',Phrase),
+    choose_linker(LinkersUsed,Linker,NewLinkersUsed),!,
+    add_phrase_linkers(Rest,NewLinkersUsed,ProcessedRest).
+add_phrase_linkers([Head|Rest],LinkersUsed,[Head|ProcessedRest]):-
+    add_phrase_linkers(Rest,LinkersUsed,ProcessedRest).
+add_phrase_linkers([],_,[]).
+
+%Choose linking adverb based on previously used adverbs
+choose_linker(Used,Linker,[Linker|Used]):-
+    phrase_linker(Linker),
+    \+member(Linker,Used).
+choose_linker(_,Linker,[Linker]):-
+    phrase_linker(Linker).
 
 %Upper case the first character of phrases except for subjects
 capitalize_phrases([[tag:subject|Rest]|RestList],[[tag:subject|Rest]|CapitalizedRest]):-
