@@ -17,7 +17,7 @@ prolog_to_imperative(Name/Arity,java):-
     patterns_to_text(Coherent_Patterns,Text_List),
     process_ifs_in_list(Text_List,Formatted_Text),!,
     process_writes_in_list(Formatted_Text,Pretty_Text),!,
-    listing(Pred),nl,
+    listing(Pred),
     write(Head),write('{'),nl,
     print_formatted_predicate(java,Pretty_Text),
     write('}'),!.
@@ -34,7 +34,7 @@ prolog_to_imperative(Name/Arity,python):-
     patterns_to_text(Coherent_Patterns,Text_List),
     process_ifs_in_list(Text_List,Formatted_Text),!,
     process_writes_in_list(Formatted_Text,Pretty_Text),!,
-    listing(Pred),nl,
+    listing(Pred),
     write(Head),write(':'),nl,
     print_formatted_predicate(python,Pretty_Text),!.
 
@@ -63,7 +63,7 @@ prolog_to_imperative_dev(Name/Arity):-
     write(formatted:Formatted_Text),nl,
     process_writes_in_list(Formatted_Text,Pretty_Text),!,
     write(pretty:Pretty_Text),nl,nl,
-    listing(Pred),nl,
+    listing(Pred),
     write(Head),write('{'),nl,
     print_formatted_predicate(java,Pretty_Text),
     write('}'),!.
@@ -82,7 +82,7 @@ prolog_to_imperative_info(Name/Arity,Head,Pretty_Text):-
     patterns_to_text(Coherent_Patterns,Text_List),
     process_ifs_in_list(Text_List,Formatted_Text),!,
     process_writes_in_list(Formatted_Text,Pretty_Text),!,
-    listing(Pred),nl,
+    listing(Pred),
     write(Head),write('{'),nl,
     print_formatted_predicate(java,Pretty_Text),
     write('}'),!.
