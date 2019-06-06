@@ -261,12 +261,15 @@ split_phrases(List,Phrases):-
     split_phrases(List,[],Phrases).
 split_phrases([tag:end_of_phrase|Rest],List,[List|SplitRest]):-
     split_phrases(Rest,[],SplitRest).
+split_phrases([Head,tag:end_of_phrase],List,[NewList]):-
+    append(List,[Head],NewList).
 split_phrases([Head|Rest],List,Split):-
     append(List,[Head],NewList),
     split_phrases(Rest,NewList,Split).
 split_phrases([],List,[List]).
 
 %Add linking adverbs to phrases
+add_phrase_linkers([],_,[]).
 add_phrase_linkers([Phrase],_,[['finally, it'|Phrase]]):-
     \+member(tag:subject,Phrase),
     \+member('if',Phrase).
@@ -277,7 +280,6 @@ add_phrase_linkers([Phrase|Rest],LinkersUsed,[[Linker,tag:comma,'it'|Phrase]|Pro
     add_phrase_linkers(Rest,NewLinkersUsed,ProcessedRest).
 add_phrase_linkers([Head|Rest],LinkersUsed,[Head|ProcessedRest]):-
     add_phrase_linkers(Rest,LinkersUsed,ProcessedRest).
-add_phrase_linkers([],_,[]).
 
 %Choose linking adverb based on previously used adverbs
 choose_linker(Used,Linker,[Linker|Used]):-
