@@ -8,8 +8,9 @@
 %Receives predicates in format Name/Arity
 prolog_to_nl(Name/0):-
     prolog_to_imperative_info(Name/0,_,Body),!,
-    delete_tags_from_list(Body,CleanBody),
-    process_body(CleanBody,ProcessedBody),!,
+    delete_tags_from_list(Body,[Clause|CleanBody]),
+    add_clause_phrase_linkers(CleanBody,[],LinkedBody),!,
+    process_body([Clause|LinkedBody],ProcessedBody),!,
     process_loop_conjunctions(ProcessedBody,ProcessedLoops),!,
     filter_subjects(ProcessedLoops,FilteredSubjects),!,
     process_punctuation(FilteredSubjects,ProcessedPunctuation),!,
@@ -21,8 +22,9 @@ prolog_to_nl(Name/0):-
 prolog_to_nl(Name/Arity):-
     prolog_to_imperative_info(Name/Arity,Head,Body),
     process_header(Head,Header),
-    delete_tags_from_list(Body,CleanBody),
-    process_body(CleanBody,ProcessedBody),!,
+    delete_tags_from_list(Body,[Clause|CleanBody]),
+    add_clause_phrase_linkers(CleanBody,[],LinkedBody),!,
+    process_body([Clause|LinkedBody],ProcessedBody),!,
     process_loop_conjunctions(ProcessedBody,ProcessedLoops),!,
     filter_subjects(ProcessedLoops,FilteredSubjects),!,
     process_punctuation(FilteredSubjects,ProcessedPunctuation),!,
@@ -37,9 +39,11 @@ prolog_to_nl_dev(Name/0):-
     prolog_to_imperative_info(Name/0,_,Body),!,
     nl,nl,
     write(body:Body),nl,
-    delete_tags_from_list(Body,CleanBody),
-    writeq(clean:CleanBody),nl,
-    process_body(CleanBody,ProcessedBody),!,
+    delete_tags_from_list(Body,[Clause|CleanBody]),
+    writeq(clean:[Clause|CleanBody]),nl,
+    add_clause_phrase_linkers(CleanBody,[],LinkedBody),!,
+    writeq(linked:LinkedBody),nl,
+    process_body([Clause|LinkedBody],ProcessedBody),!,
     writeq(body:ProcessedBody),nl,
     process_loop_conjunctions(ProcessedBody,ProcessedLoops),!,
     writeq(loop:ProcessedLoops),nl,
@@ -60,9 +64,11 @@ prolog_to_nl_dev(Name/Arity):-
     write(body:Body),nl,
     process_header(Head,Header),
     writeq(header:Header),nl,
-    delete_tags_from_list(Body,CleanBody),
-    writeq(clean:CleanBody),nl,
-    process_body(CleanBody,ProcessedBody),!,
+    delete_tags_from_list(Body,[Clause|CleanBody]),
+    writeq(clean:[Clause|CleanBody]),nl,
+    add_clause_phrase_linkers(CleanBody,[],LinkedBody),!,
+    writeq(linked:LinkedBody),nl,
+    process_body([Clause|LinkedBody],ProcessedBody),!,
     writeq(body:ProcessedBody),nl,
     process_loop_conjunctions(ProcessedBody,ProcessedLoops),!,
     writeq(loop:ProcessedLoops),nl,
@@ -87,6 +93,12 @@ delete_tags(List,Clean_List):-
     delete(List,tag:indent,List2),
     delete(List2,tag:unindent,List3),
     delete(List3,tag:write_unindent,Clean_List).
+
+%Add phrase linkers to unite program clauses
+add_clause_phrase_linkers([],_,[]).
+add_clause_phrase_linkers([Clause|Rest],LinkersUsed,[[Linker,tag:comma|Clause]|ProcessedRest]):-
+    choose_linker(LinkersUsed,Linker,NewLinkersUsed),!,
+    add_clause_phrase_linkers(Rest,NewLinkersUsed,ProcessedRest).  
 
 %Processes body of imperative-style description into natural language
 process_body([Head|Rest],[Processed|ProcessedRest]):-
@@ -248,6 +260,10 @@ remove_extra_subjects([Head|Rest],[Head|Filtered]):-
 remove_extra_subjects([],[]).
 
 %Process end_of_phrase tags and capitalize appropriately all lists in list
+process_punctuation([List],Capitalized):-
+    split_phrases(List,Phrases),!,
+    add_final_phrase_linkers(Phrases,[],LinkedPhrases),!,
+    capitalize_phrases(LinkedPhrases,Capitalized).
 process_punctuation([List|Rest],Processed):-
     split_phrases(List,Phrases),!,
     add_phrase_linkers(Phrases,[],LinkedPhrases),!,
@@ -270,9 +286,6 @@ split_phrases([],List,[List]).
 
 %Add linking adverbs to phrases
 add_phrase_linkers([],_,[]).
-add_phrase_linkers([Phrase],_,[['finally, it'|Phrase]]):-
-    \+member(tag:subject,Phrase),
-    \+member('if',Phrase).
 add_phrase_linkers([Phrase|Rest],LinkersUsed,[[Linker,tag:comma,'it'|Phrase]|ProcessedRest]):-
     \+member(tag:subject,Phrase),
     \+member('if',Phrase),
@@ -280,6 +293,19 @@ add_phrase_linkers([Phrase|Rest],LinkersUsed,[[Linker,tag:comma,'it'|Phrase]|Pro
     add_phrase_linkers(Rest,NewLinkersUsed,ProcessedRest).
 add_phrase_linkers([Head|Rest],LinkersUsed,[Head|ProcessedRest]):-
     add_phrase_linkers(Rest,LinkersUsed,ProcessedRest).
+
+%Add linking adverbs to phrases of the program's last clause
+add_final_phrase_linkers([],_,[]).
+add_final_phrase_linkers([Phrase],_,[['finally, it'|Phrase]]):-
+    \+member(tag:subject,Phrase),
+    \+member('if',Phrase).
+add_final_phrase_linkers([Phrase|Rest],LinkersUsed,[[Linker,tag:comma,'it'|Phrase]|ProcessedRest]):-
+    \+member(tag:subject,Phrase),
+    \+member('if',Phrase),
+    choose_linker(LinkersUsed,Linker,NewLinkersUsed),!,
+    add_final_phrase_linkers(Rest,NewLinkersUsed,ProcessedRest).
+add_final_phrase_linkers([Head|Rest],LinkersUsed,[Head|ProcessedRest]):-
+    add_final_phrase_linkers(Rest,LinkersUsed,ProcessedRest). 
 
 %Choose linking adverb based on previously used adverbs
 choose_linker(Used,Linker,[Linker|Used]):-

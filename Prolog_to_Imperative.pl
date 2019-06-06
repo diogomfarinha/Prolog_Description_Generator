@@ -6,6 +6,7 @@ prolog_to_imperative(Pred):-
     %prolog_to_imperative_dev(Pred).
 prolog_to_imperative(Name/Arity,java):-
     nl,
+    retractall(recursion_argument(_)),%Prevent rare bug when 2 recursive programs are run sequentially
     get_predicate(Name/Arity,Pred),
     get_all_rules(Pred,Rules),
     get_patterns(Pred,Rules,Patterns),
@@ -23,6 +24,7 @@ prolog_to_imperative(Name/Arity,java):-
     write('}'),!.
 prolog_to_imperative(Name/Arity,python):-
     nl,
+    retractall(recursion_argument(_)),%Prevent rare bug when 2 recursive programs are run sequentially
     get_predicate(Name/Arity,Pred),
     get_all_rules(Pred,Rules),
     get_patterns(Pred,Rules,Patterns),
@@ -41,6 +43,7 @@ prolog_to_imperative(Name/Arity,python):-
 %Developer version
 prolog_to_imperative_dev(Name/Arity):-
     nl,
+    retractall(recursion_argument(_)),%Prevent rare bug when 2 recursive programs are run sequentially
     get_predicate(Name/Arity,Pred),
     write(pred:Pred),nl,
     get_all_rules(Pred,Rules),
@@ -71,6 +74,7 @@ prolog_to_imperative_dev(Name/Arity):-
 %Converts Prolog programs into imperative-style descriptions
 prolog_to_imperative_info(Name/Arity,Head,Pretty_Text):-
     nl,
+    retractall(recursion_argument(_)),%Prevent rare bug when 2 recursive programs are run sequentially
     get_predicate(Name/Arity,Pred),
     get_all_rules(Pred,Rules),
     get_patterns(Pred,Rules,Patterns),
