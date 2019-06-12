@@ -254,6 +254,66 @@ opposite_conditions(X>=Y,X<Y).
 opposite_conditions(X>Y,X=<Y).
 opposite_conditions(X=<Y,X>Y).
 
+%List is list of rules in File that belong to Pred. Pred is in format Name/Arity
+get_all_rules_with_variables(File,Pred,List):-
+    open(File, read, Stream),
+    read_and_process_terms(Stream,Pred,List),
+    write(List),!,
+    close(Stream).
 
+%Reads and processes term from stream
+read_and_process_terms(Stream,Pred,List):-
+    read_term(Stream,Term, [variable_names(VarNames)]),
+    process_term(Stream,Pred,List,Term,VarNames).
+
+%Processes Term. List contains translated heands and bodies of terms whose name and arity match the given predicate
+process_term(_,_,[],end_of_file,_).
+process_term(Stream,Name/Arity,[[Pred|TranslatedBody]|Rest],Head:-Body,VarNames):-
+    Head=..[Name|Args],
+    length(Args,Length),
+    Length=Arity,
+    translate_variables(Args,VarNames,Translated),
+    Pred=..[Name|Translated],
+    conjunction_to_list(Body,BodyList),
+    translate_predicates(BodyList,VarNames,TranslatedBody),
+    read_and_process_terms(Stream,Name/Arity,Rest).
+process_term(Stream,Pred,List,_,_):-
+    read_and_process_terms(Stream,Pred,List).
+
+%Translate variables of predicates in list
+translate_predicates([Pred|Rest],VarNames,[Translated|TranslatedRest]):-
+    Pred=..[Name|Args],
+    translate_variables(Args,VarNames,TranslatedArgs),
+    Translated=..[Name|TranslatedArgs],
+    translate_predicates(Rest,VarNames,TranslatedRest).
+translate_predicates([],_,[]).
+
+%Translate variables in list with dictionary
+translate_variables([Var|Rest],VarsDic,[Trans|TransRest]):-
+    var(Var),
+    get_translation(Var,VarsDic,Trans),
+    translate_variables(Rest,VarsDic,TransRest).
+translate_variables([Head|Rest],VarsDic,[list2|TransRest]):-
+    \+var(Head),
+    Head=[_|_],
+    translate_variables(Rest,VarsDic,TransRest).
+translate_variables([Atom|Rest],VarsDic,[Atom|TransRest]):-
+    \+var(Atom),
+    translate_variables(Rest,VarsDic,TransRest).
+translate_variables([],_,[]).
+
+%Translated is Var translated according to the dictionary
+get_translation(Var,[Translated=Head|_],Translated):-
+    Var==Head. % Must use == to compare non-instantiated variables
+get_translation(Var,[_|Rest],Translated):-
+    get_translation(Var,Rest,Translated).
+get_translation(_,[],'_').
+
+%ArgsList is list of all arguments in list
+get_arguments_list([Head|Rest],ArgsList):-
+    Head=..[_|Args],
+    get_arguments_list(Rest,ArgsRest),
+    append(Args,ArgsRest,ArgsList).
+get_arguments_list([],[]).
 
 

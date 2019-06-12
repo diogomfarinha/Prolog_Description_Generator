@@ -2,8 +2,8 @@
 
 %Converts and prints Prolog programs into imperative-style descriptions. Pred is in Name/Arity format
 prolog_to_imperative(Pred):-
-    prolog_to_imperative(Pred,java).
-    %prolog_to_imperative_dev(Pred).
+    %prolog_to_imperative(Pred,java).
+    prolog_to_imperative_dev(Pred).
 prolog_to_imperative(Name/Arity,java):-
     nl,
     retractall(recursion_argument(_)),%Prevent rare bug when 2 recursive programs are run sequentially
