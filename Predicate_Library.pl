@@ -254,12 +254,19 @@ opposite_conditions(X>=Y,X<Y).
 opposite_conditions(X>Y,X=<Y).
 opposite_conditions(X=<Y,X>Y).
 
+%List is list of rules in File that belong to Pred. Pred is in format Name/Arity. Throws error if Pred does not exist in file.
+get_rules_with_variables(File,Pred,List):-
+    get_all_rules_with_variables(File,Pred,List),
+    List=[],
+    throw('Predicate does not exist in file.').
+get_rules_with_variables(File,Pred,List):-
+    get_all_rules_with_variables(File,Pred,List).
+
 %List is list of rules in File that belong to Pred. Pred is in format Name/Arity
 get_all_rules_with_variables(File,Pred,List):-
     open(File, read, Stream),
     read_and_process_terms(Stream,Pred,List),
-    write(List),!,
-    close(Stream).
+    close(Stream),!.
 
 %Reads and processes term from stream
 read_and_process_terms(Stream,Pred,List):-
@@ -293,9 +300,9 @@ translate_variables([Var|Rest],VarsDic,[Trans|TransRest]):-
     var(Var),
     get_translation(Var,VarsDic,Trans),
     translate_variables(Rest,VarsDic,TransRest).
-translate_variables([Head|Rest],VarsDic,[list2|TransRest]):-
-    \+var(Head),
-    Head=[_|_],
+translate_variables([[X|Y]|Rest],VarsDic,[[TransX|TransY]|TransRest]):-
+    get_translation(X,VarsDic,TransX),
+    get_translation(Y,VarsDic,TransY),
     translate_variables(Rest,VarsDic,TransRest).
 translate_variables([Atom|Rest],VarsDic,[Atom|TransRest]):-
     \+var(Atom),
@@ -309,11 +316,5 @@ get_translation(Var,[_|Rest],Translated):-
     get_translation(Var,Rest,Translated).
 get_translation(_,[],'_').
 
-%ArgsList is list of all arguments in list
-get_arguments_list([Head|Rest],ArgsList):-
-    Head=..[_|Args],
-    get_arguments_list(Rest,ArgsRest),
-    append(Args,ArgsRest,ArgsList).
-get_arguments_list([],[]).
 
 

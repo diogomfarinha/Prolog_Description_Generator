@@ -7,7 +7,7 @@
 %into natural language descriptions.
 %Receives predicates in format Name/Arity
 prolog_to_nl(Name/0):-
-    prolog_to_imperative_info(Name/0,_,Body),!,
+    prolog_to_imperative(Name/0,_,Body),!,
     delete_tags_from_list(Body,[Clause|CleanBody]),
     add_clause_phrase_linkers(CleanBody,[],LinkedBody),!,
     process_body([Clause|LinkedBody],ProcessedBody),!,
@@ -18,9 +18,9 @@ prolog_to_nl(Name/0):-
     process_subjects(Name,ProcessedConjunctions,ProcessedSubjects),!,
     process_phrases(ProcessedSubjects,Text),!,
     nl,nl,
-    write(Text).
+    write(Text),nl.
 prolog_to_nl(Name/Arity):-
-    prolog_to_imperative_info(Name/Arity,Head,Body),
+    prolog_to_imperative(Name/Arity,Head,Body),
     process_header(Head,Header),
     delete_tags_from_list(Body,[Clause|CleanBody]),
     add_clause_phrase_linkers(CleanBody,[],LinkedBody),!,
@@ -32,11 +32,11 @@ prolog_to_nl(Name/Arity):-
     process_subjects(Name,ProcessedConjunctions,ProcessedSubjects),!,
     process_phrases([Header|ProcessedSubjects],Text),!,
     nl,nl,
-    write(Text).
+    write(Text),nl.
 
 %Developer version
 prolog_to_nl_dev(Name/0):-
-    prolog_to_imperative_info(Name/0,_,Body),!,
+    prolog_to_imperative(Name/0,_,Body),!,
     nl,nl,
     write(body:Body),nl,
     delete_tags_from_list(Body,[Clause|CleanBody]),
@@ -57,7 +57,7 @@ prolog_to_nl_dev(Name/0):-
     writeq(subjects:ProcessedSubjects),nl,
     process_phrases(ProcessedSubjects,Text),!,
     nl,nl,
-    write(Text).
+    write(Text),nl.
 prolog_to_nl_dev(Name/Arity):-
     prolog_to_imperative_info(Name/Arity,Head,Body),
     nl,nl,
@@ -82,7 +82,7 @@ prolog_to_nl_dev(Name/Arity):-
     writeq(subjects:ProcessedSubjects),nl,
     process_phrases([Header|ProcessedSubjects],Text),!,
     nl,nl,
-    write(Text).
+    write(Text),nl.
 
 %Delete tags relevant to imperative style descriptions
 delete_tags_from_list([List|Rest],[Clean|CleanRest]):-

@@ -6,3 +6,21 @@
 
 %Testing only.
 %Loads all modules
+
+%Test prolog_to_imperative
+test1:-
+    prolog_to_imperative(displayStatus/0),
+    prolog_to_imperative(displayStudents/0),
+    prolog_to_imperative(inputPassword/0),
+    prolog_to_imperative(inputCredentials/0),
+    prolog_to_imperative(printList/1),
+    prolog_to_imperative(printList2/2).
+
+%Test prolog_to_nl
+test2:-
+    prolog_to_nl(displayStatus/0),
+    prolog_to_nl(displayStudents/0),
+    prolog_to_nl(inputPassword/0),
+    prolog_to_nl(inputCredentials/0),
+    prolog_to_nl(printList/1),
+    prolog_to_nl(printList2/2).

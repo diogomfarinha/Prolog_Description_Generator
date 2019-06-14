@@ -1,0 +1,98 @@
+%recursion pattern- vector input, output by side-effect
+pattern(Predicate,[Pred|Body],[tag:list_recursion|Rest]):-
+     functor(Predicate,Name,1),
+     functor(Pred,Name,1),
+     Predicate=..[Name,[Var1|Var2]],
+     var(Var1),
+     var(Var2),
+     Pred=..[Name,Var3],
+     var(Var3),
+     New_Predicate=..[Name,[]],
+     catch(New_Predicate,_,fail),%Prevent errors from calling non-existent predicates
+     pattern(Predicate,Body,Rest).
+
+%Finds argument with format [Head|Rest] in list with Index. Prevents bugs member/2 and nth0/3 would otherwise cause when dealing with variables.
+list_contains_list_argument(List,Index):-
+    list_contains_list_argument(List,Index,0).
+list_contains_list_argument([Head|_],Index,Index):-
+    \+var(Head),
+    Head=[_|_].
+list_contains_list_argument([_|Rest],Index,Count):-
+    Up is Count+1,
+    list_contains_list_argument(Rest,Index,Up).
+
+%Get variables dictionary for all variables in list of patterns
+get_variables_dictionary(Patterns,VarsDic):-
+    flatten(Patterns, FlatPatterns),
+    get_variables_list(FlatPatterns,VarsList),
+    list_to_set(VarsList,VarsSet),
+    create_variables_dictionary(VarsSet,VarsDic).
+
+%Second argument is list of all variables in 1st argument
+get_variables_list([Head|Rest],VarsList):-
+    term_variables(Head,Vars),
+    get_variables_list(Rest,VarsRest),
+    append(Vars,VarsRest,VarsList).
+get_variables_list([],[]).
+
+%Creates list of atom:variable pairs from variables in list
+create_variables_dictionary(List,Dic):-
+    create_variables_dictionary(List,Dic,[]).
+create_variables_dictionary([Head|Rest],[Head:Var|Dic],List):-
+    generate_variable(Var),
+    \+member(Var,List),
+    create_variables_dictionary(Rest,Dic,[Var|List]).
+create_variables_dictionary([],[],_).
+
+%Translate variables in head of predicate
+translate_head_args(HeadArgs,VarsDic,TransArgs):-
+    \+catch(recursion_argument(_),_,fail),
+    translate_variables(HeadArgs,VarsDic,TransArgs).
+translate_head_args(HeadArgs,VarsDic,TransArgs):-
+    retract(recursion_argument(Index)),
+    switch_index(Index,HeadArgs,list,NewArgs),
+    translate_variables(NewArgs,VarsDic,TransArgs).
+
+%Translate variables in list with dictionary
+translate_variables([Var|Rest],VarsDic,[Trans|TransRest]):-
+    var(Var),
+    get_translation(Var,VarsDic,Trans),
+    translate_variables(Rest,VarsDic,TransRest).
+translate_variables([Head|Rest],VarsDic,[list2|TransRest]):-
+    \+var(Head),
+    Head=[_|_],
+    translate_variables(Rest,VarsDic,TransRest).
+translate_variables([Atom|Rest],VarsDic,[Atom|TransRest]):-
+    \+var(Atom),
+    translate_variables(Rest,VarsDic,TransRest).
+translate_variables([],_,[]).
+
+%Translated is Var translated according to the dictionary
+get_translation(Var,[Head:Translated|_],Translated):-
+    Var==Head.
+get_translation(Var,[_|Rest],Translated):-
+    get_translation(Var,Rest,Translated).
+get_translation(_,[],var).
+
+%Processes patterns in list of patterns
+process_patterns_list([Pattern|Rest],[Processed|Processed_Rest]):-
+    process_patterns(Pattern,Processed),!,
+    process_patterns_list(Rest,Processed_Rest),!.
+process_patterns_list([],[]).
+
+%Processes pattern list
+process_patterns([tag:for_loop,Pred|Rest],[tag:for_loop,Args,Pred|ProcessedRest]):-
+    Pred=..[_|Args],
+    process_patterns(Rest,ProcessedRest).
+process_patterns([tag:repeat_loop|Rest],[tag:do_while|ProcessedRest]):-
+    process_patterns(Rest,ProcessedRest).
+process_patterns([tag:if_not,\+Pred|Rest],[tag:if_not,Pred|ProcessedRest]):-
+    process_patterns(Rest,ProcessedRest).
+process_patterns([Pred|Rest],[TransPred|ProcessedRest]):-
+    Pred=..[Name|[]],
+    Name\=nl,
+    TransPred=..[Name|['']],
+    process_patterns(Rest,ProcessedRest).
+process_patterns([Pred|Rest],[Pred|ProcessedRest]):-
+    process_patterns(Rest,ProcessedRest).
+process_patterns([],[]).
