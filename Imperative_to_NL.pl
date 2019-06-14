@@ -133,6 +133,11 @@ process_snippet([for(Iteration)|Rest],[Desc,tag:subject|DescRest]):-
 process_snippet([do|Rest],[tag:subject|DescRest]):-
     process_snippet(Rest,DescRest).
 process_snippet([while(not(Pred))|Rest],[tag:end_of_phrase,'if',Desc,tag:end_of_phrase|DescRest]):-
+    Pred=..[Name|[Arg]],
+    string_lower(Arg,Name),
+    atom_concat(Arg,' exists, it stops, otherwise it repeats the same process',Desc),
+    process_snippet(Rest,DescRest).
+process_snippet([while(not(Pred))|Rest],[tag:end_of_phrase,'if',Desc,tag:end_of_phrase|DescRest]):-
     Pred=..[Name|Args],
     atomic_list_concat(Args,', ', AtomArgs),
     atom_concat(Name,' ',Atom1),
@@ -159,14 +164,16 @@ process_snippet([Pred|Rest],[Desc,tag:conjunction,'breaks line',tag:conjunction|
     Name=print_line,
     procedure_description(Pred,present,Desc),!,
     process_snippet(Rest,DescRest).
-process_snippet([Pred|Rest],[FullDesc,tag:conjunction|DescRest]):-
-    compound(Pred),
-    Pred=..[Name|Args],
-    Name=read,
-    procedure_description(Pred,present,Desc),!,
-    get_context(Args,Rest,Context),!,
-    pretty_enumeration(Args,PrettyArgs),
-    atomic_list_concat([Desc,Context,PrettyArgs,'from user input'],' ',FullDesc),
+process_snippet([read(X)|Rest],[FullDesc,tag:conjunction|DescRest]):-
+    procedure_description(read(X),present,Desc),!,
+    get_context([X],Rest,Context),!,
+    string_lower(X,Context),%Name of variable is the same as context
+    atomic_list_concat([Desc,X,'from user input'],' ',FullDesc),
+    process_snippet(Rest,DescRest).
+process_snippet([read(X)|Rest],[FullDesc,tag:conjunction|DescRest]):-
+    procedure_description(read(X),present,Desc),!,
+    get_context([X],Rest,Context),!,
+    atomic_list_concat([Desc,Context,X,'from user input'],' ',FullDesc),
     process_snippet(Rest,DescRest).
 process_snippet([Pred|Rest],[Desc,tag:conjunction|DescRest]):-
     compound(Pred),

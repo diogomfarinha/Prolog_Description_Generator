@@ -21,7 +21,7 @@ prolog_to_imperative(Name/Arity,Style):-
     listing(Pred),
     print_formatted_description(Style,ProcessedHead,Pretty_Text),!.
 %Prolog to imperative/3 has the final description as one of its arguments
-prolog_to_imperative(Name/Arity,Head,Pretty_Text):-
+prolog_to_imperative(Name/Arity,ProcessedHead,Pretty_Text):-
     get_rules_with_variables('Test_Programs.pl',Name/Arity,[[Head|Rule]|Rules]),
     get_patterns([[Head|Rule]|Rules],Patterns),
     eliminate_iteration_redundancy(Patterns,Filtered_Patterns),

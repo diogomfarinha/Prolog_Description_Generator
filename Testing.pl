@@ -24,3 +24,5 @@ test2:-
     prolog_to_nl(inputCredentials/0),
     prolog_to_nl(printList/1),
     prolog_to_nl(printList2/2).
+
+

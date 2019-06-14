@@ -95,13 +95,6 @@ printStudentsTwice:-
     fail.
 printStudentsTwice.
 
-%Recursive list iteration definition. CASE NOT SUPPORTED AT THIS TIME
-remove_from_list(X,[X|Rest],List):-
-    remove_from_list(X,Rest,List).
-remove_from_list(X,[Head|Rest],[Head|List]):-
-    X\=Head,
-    remove_from_list(X,Rest,List).
-remove_from_list(_,[],[]).
 
 
  

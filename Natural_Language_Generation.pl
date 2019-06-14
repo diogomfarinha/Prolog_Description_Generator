@@ -21,9 +21,7 @@ procedure_description(Predicate,Tense,Desc):-
     atom_concat(Conjugated,' \"',Atom1),
     atom_concat(Atom1,AtomArgs,Atom2),
     atom_concat(Atom2,'\" on the console',Desc).
-procedure_description(Predicate,Tense,Conjugation):-
-    Predicate=..[Name|_],
-    Name=read,
+procedure_description(read(_),Tense,Conjugation):-
     conjugate(read,Tense,Conjugation).
 %Generate description in present tense 
 procedure_description(Predicate,present,Desc):-
@@ -40,6 +38,11 @@ generate_description(Predicate,Conjugation,Desc):-
     atom_length(Atom, Length),
     Len is Length-1,
     sub_atom(Atom,0,Len,_,Desc).%Remove useless space since there are no arguments
+generate_description(Predicate,_,Arg):-
+    Predicate=..[Name|[Arg]],
+    atom_chars(Name, CharList),
+    separate_words(CharList,[Word]),
+    string_lower(Arg,Word).
 generate_description(Predicate,present,Desc):-
     Predicate=..[Name|Args],
     atom_chars(Name, CharList),
