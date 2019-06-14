@@ -102,7 +102,7 @@ add_clause_phrase_linkers([Clause|Rest],LinkersUsed,[[Linker,tag:comma|Clause]|P
 
 %Processes body of imperative-style description into natural language
 process_body([Head|Rest],[Processed|ProcessedRest]):-
-    process_snippet(Head,Processed),
+    process_snippet(Head,Processed),!,
     process_body(Rest,ProcessedRest).
 process_body([],[]).
 
@@ -119,8 +119,12 @@ process_snippet([for(Variables:Predicate)|Rest],[Desc,tag:loop_conjunction,tag:s
     pretty_enumeration(Vars,PrettyVars),
     atom_concat('for each ',PrettyVars,Atom1),
     atom_concat(Atom1,' that satisfy ',Atom2),
-    term_string(Predicate,PredString),
-    atom_concat(Atom2,PredString,Desc),
+    Predicate=..[Name|Args],
+    atom_concat(Atom2,Name,Atom3),%term_to_atom adds single quotes
+    atom_concat(Atom3,'(',Atom4),
+    atomic_list_concat(Args,',',AtomArgs),
+    atom_concat(Atom4,AtomArgs,Atom5),
+    atom_concat(Atom5,')',Desc),
     process_snippet(Rest,DescRest).
 process_snippet([for(Iteration)|Rest],[Desc,tag:subject|DescRest]):-
     atomic_list_concat(List,' ',Iteration),
@@ -165,14 +169,14 @@ process_snippet([Pred|Rest],[Desc,tag:conjunction,'breaks line',tag:conjunction|
     procedure_description(Pred,present,Desc),!,
     process_snippet(Rest,DescRest).
 process_snippet([read(X)|Rest],[FullDesc,tag:conjunction|DescRest]):-
-    procedure_description(read(X),present,Desc),!,
-    get_context([X],Rest,Context),!,
+    procedure_description(read(X),present,Desc),
+    get_context([X],Rest,Context),
     string_lower(X,Context),%Name of variable is the same as context
     atomic_list_concat([Desc,X,'from user input'],' ',FullDesc),
     process_snippet(Rest,DescRest).
 process_snippet([read(X)|Rest],[FullDesc,tag:conjunction|DescRest]):-
-    procedure_description(read(X),present,Desc),!,
-    get_context([X],Rest,Context),!,
+    procedure_description(read(X),present,Desc),
+    get_context([X],Rest,Context),
     atomic_list_concat([Desc,Context,X,'from user input'],' ',FullDesc),
     process_snippet(Rest,DescRest).
 process_snippet([Pred|Rest],[Desc,tag:conjunction|DescRest]):-
@@ -192,13 +196,13 @@ get_context(Args,[Head|Rest],Context):-
     atom(Head),
     get_context(Args,Rest,Context).
 get_context(Args,[for(_:Predicate)|_],Context):-
-    get_context_in_predicate(Args,Predicate,Context).
+    get_context_in_predicate(Args,Predicate,Context),!.
 get_context(Args,[while(not(Predicate))|_],Context):-
-    get_context_in_predicate(Args,Predicate,Context).
+    get_context_in_predicate(Args,Predicate,Context),!.
 get_context(Args,[while(not_successful(Predicate))|_],Context):-
-    get_context_in_predicate(Args,Predicate,Context).
+    get_context_in_predicate(Args,Predicate,Context),!.
 get_context(Args,[Predicate|_],Context):-
-    get_context_in_predicate(Args,Predicate,Context).
+    get_context_in_predicate(Args,Predicate,Context),!.
 get_context(Args,[_|Rest],Context):-
     get_context(Args,Rest,Context).
 get_context(_,[],'').

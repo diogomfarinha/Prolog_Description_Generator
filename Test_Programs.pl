@@ -51,8 +51,8 @@ inputCredentials:-
     read(Name),
     name(Name),
     write('Password:'),nl,
-    read(Password),
-    password(Name,Password),
+    read(P),
+    password(Name,P),
     write('Credentials accepted').
 
 %Recursive list iteration
@@ -84,6 +84,17 @@ findElements(N,[Head|Rest]):-
     findElements(N,Rest).
 findElements(_,[]).
 
+%Recursive list iteration with if-else clauses
+biggerThan(N,[Head|Rest]):-
+    Head>N,
+    write(Head),write(' is bigger than '),write(N),nl,
+    biggerThan(N,Rest).
+biggerThan(N,[Head|Rest]):-
+    Head=<N,
+    write(Head),write(' is not bigger than '),write(N),nl,
+    biggerThan(N,Rest).
+biggerThan(_,[]).
+
 %Sucessive fail loops.
 printStudentsTwice:-
     student(_,S),
@@ -94,6 +105,17 @@ printStudentsTwice:-
     write(S),nl,
     fail.
 printStudentsTwice.
+
+%Successive fail loops
+displayPeople:-
+    gender(Person,female),
+    write(Person),nl,
+    fail.
+displayPeople:-
+    gender(Person,male),
+    write(Person),nl,
+    fail.
+displayPeople.
 
 
 

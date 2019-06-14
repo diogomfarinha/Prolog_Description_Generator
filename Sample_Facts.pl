@@ -31,3 +31,8 @@ student(math,afonso).
 
 name(michael).
 password(michael,mic123).
+
+gender(john,male).
+gender(michael,male).
+gender(maria,female).
+gender(anna,female).

@@ -22,7 +22,7 @@ procedure_description(Predicate,Tense,Desc):-
     atom_concat(Atom1,AtomArgs,Atom2),
     atom_concat(Atom2,'\" on the console',Desc).
 procedure_description(read(_),Tense,Conjugation):-
-    conjugate(read,Tense,Conjugation).
+    conjugate(read,Tense,Conjugation),!.
 %Generate description in present tense 
 procedure_description(Predicate,present,Desc):-
     generate_description(Predicate,present,Desc),!.
@@ -30,33 +30,39 @@ procedure_description(Predicate,present,Desc):-
 procedure_description(Predicate,infinitive,Desc):-
     generate_description(Predicate,infinitive,Desc),!.
 
-%Automatic generation of natural language descriptions
+%Automatic generation of natural language descriptions.
+%Handle special case of 0 arguments made pretty for imperative descriptions
 generate_description(Predicate,Conjugation,Desc):-
-    Predicate=..[Name|['']],%Handle special case of 0 arguments made pretty for imperative descriptions
+    Predicate=..[Name|['']],
     NewPred=..[Name|[]],
     generate_description(NewPred,Conjugation,Atom),
     atom_length(Atom, Length),
     Len is Length-1,
     sub_atom(Atom,0,Len,_,Desc).%Remove useless space since there are no arguments
+%Predicate name is a noun equal to Variable name
 generate_description(Predicate,_,Arg):-
     Predicate=..[Name|[Arg]],
     atom_chars(Name, CharList),
     separate_words(CharList,[Word]),
     string_lower(Arg,Word).
-generate_description(Predicate,present,Desc):-
+%Predicate name contains variable name
+generate_description(Predicate,Tense,Desc):-
+    Predicate=..[Name|[Arg]],
+    atom_chars(Name, CharList),
+    separate_words(CharList,Words),
+    string_lower(Arg,Word),
+    remove_quotation_marks(Word,NewWord),
+    delete(Words,NewWord,NewWords),
+    conjugate_verbs(NewWords,Tense,Conjugated),!,
+    append(Conjugated,[Arg],DescList),
+    atomic_list_concat(DescList,' ', Desc).
+generate_description(Predicate,Tense,Desc):-
     Predicate=..[Name|Args],
     atom_chars(Name, CharList),
     separate_words(CharList,Words),
-    conjugate_verbs(Words,present,Conjugated),!,
+    conjugate_verbs(Words,Tense,Conjugated),!,
     pretty_enumeration(Args,PrettyArgs),
     append(Conjugated,[PrettyArgs],DescList),
-    atomic_list_concat(DescList,' ', Desc).
-generate_description(Predicate,infinitive,Desc):-
-    Predicate=..[Name|Args],
-    atom_chars(Name, CharList),
-    separate_words(CharList,Words),
-    pretty_enumeration(Args,PrettyArgs),
-    append(Words,[PrettyArgs],DescList),
     atomic_list_concat(DescList,' ', Desc).
 
 %Separate words in list of characters according to common programming conventions

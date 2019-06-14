@@ -215,10 +215,20 @@ iter_loop_description(Element,for(Text)):-
 %Describe a for loop with arguments and predicate
 for_loop_description([X],Predicate,for(X:Predicate)).
 for_loop_description(Arguments,Predicate,for(X:Predicate)):-
-    delete(Arguments,'_',[X]).
+    delete(Arguments,'_',CleanArgs),
+    delete_non_variables(CleanArgs,[X]).
 for_loop_description(Arguments,Predicate,for(Term:Predicate)):-
     delete(Arguments,'_',CleanArgs),
-    Term=..[''|CleanArgs].
+    delete_non_variables(CleanArgs,CleanArgs2),
+    Term=..[''|CleanArgs2].
+
+%Delete non variable atoms from list
+delete_non_variables([Head|Rest],Filtered):-
+    string_lower(Head,Head),
+    delete_non_variables(Rest,Filtered).
+delete_non_variables([Head|Rest],[Head|Filtered]):-
+    delete_non_variables(Rest,Filtered).
+delete_non_variables([],[]).
 
 %Describe an if clause with condition
 if_clause_description(Condition,if(Condition)).

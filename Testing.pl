@@ -14,7 +14,7 @@ test1:-
     prolog_to_imperative(inputPassword/0),
     prolog_to_imperative(inputCredentials/0),
     prolog_to_imperative(printList/1),
-    prolog_to_imperative(printList2/2).
+    prolog_to_nl(biggerThan/2).
 
 %Test prolog_to_nl
 test2:-
@@ -23,6 +23,16 @@ test2:-
     prolog_to_nl(inputPassword/0),
     prolog_to_nl(inputCredentials/0),
     prolog_to_nl(printList/1),
-    prolog_to_nl(printList2/2).
+    prolog_to_nl(biggerThan/2).
+
+%Results chosen for peer evaluation
+results:-
+    prolog_to_nl(displayStatus/0),
+    prolog_to_nl(displayStudents/0),
+    prolog_to_nl(displayPeople/0),
+    prolog_to_nl(inputPassword/0),
+    prolog_to_nl(inputCredentials/0),
+    prolog_to_nl(printList/1),
+    prolog_to_nl(biggerThan/2).
 
 
