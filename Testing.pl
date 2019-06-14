@@ -10,20 +10,34 @@
 %Test prolog_to_imperative
 test1:-
     prolog_to_imperative(displayStatus/0),
+    prolog_to_imperative(displayAge/0),
+    prolog_to_imperative(displayOld/0),
     prolog_to_imperative(displayStudents/0),
     prolog_to_imperative(inputPassword/0),
     prolog_to_imperative(inputCredentials/0),
     prolog_to_imperative(printList/1),
-    prolog_to_nl(biggerThan/2).
+    prolog_to_imperative(printList2/2),
+    prolog_to_imperative(printList3/3),
+    prolog_to_imperative(findElements/2),
+    prolog_to_imperative(biggerThan/2),
+    prolog_to_imperative(printStudentsTwice/0),
+    prolog_to_imperative(displayPeople/0).
 
 %Test prolog_to_nl
 test2:-
     prolog_to_nl(displayStatus/0),
+    prolog_to_nl(displayAge/0),
+    prolog_to_nl(displayOld/0),
     prolog_to_nl(displayStudents/0),
     prolog_to_nl(inputPassword/0),
     prolog_to_nl(inputCredentials/0),
     prolog_to_nl(printList/1),
-    prolog_to_nl(biggerThan/2).
+    prolog_to_nl(printList2/2),
+    prolog_to_nl(printList3/3),
+    prolog_to_nl(findElements/2),
+    prolog_to_nl(biggerThan/2),
+    prolog_to_nl(printStudentsTwice/0),
+    prolog_to_nl(displayPeople/0).
 
 %Results chosen for peer evaluation
 results:-

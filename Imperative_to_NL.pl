@@ -111,8 +111,12 @@ process_snippet([for(Variable:Predicate)|Rest],[Desc,tag:loop_conjunction,tag:su
     atom(Variable),
     atom_concat('for each ',Variable,Atom1),
     atom_concat(Atom1,' that satisfies ',Atom2),
-    term_string(Predicate,PredString),
-    atom_concat(Atom2,PredString,Desc),
+    Predicate=..[Name|Args],
+    atom_concat(Atom2,Name,Atom3),%term_to_atom adds single quotes
+    atom_concat(Atom3,'(',Atom4),
+    atomic_list_concat(Args,',',AtomArgs),
+    atom_concat(Atom4,AtomArgs,Atom5),
+    atom_concat(Atom5,')',Desc),
     process_snippet(Rest,DescRest).
 process_snippet([for(Variables:Predicate)|Rest],[Desc,tag:loop_conjunction,tag:subject|DescRest]):-
     Variables=..[_|Vars],
