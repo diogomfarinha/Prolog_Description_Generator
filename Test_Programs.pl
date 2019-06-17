@@ -56,42 +56,42 @@ inputCredentials:-
     write('Credentials accepted').
 
 %Recursive list iteration
-printList([Head|Rest]):-
-	write(Head),nl,
+printList([X|Rest]):-
+	write(X),nl,
 	printList(Rest).
 printList([]).
 
 %Recursive list iteration with 2 arguments
-printList2([Head|Rest],X):-
-	write(Head),write(' '),write(X),nl,
+printList2([H|Rest],X):-
+	write(H),write(' '),write(X),nl,
 	printList2(Rest,X).
 printList2([],_).
 
 %Recursive list iteration with 3 arguments
-printList3(X,[Head|Rest],Y):-
-	write(X),write(' '),write(Head),write(' '),write(Y),nl,
+printList3(X,[H|Rest],Y):-
+	write(X),write(' '),write(H),write(' '),write(Y),nl,
 	printList3(X,Rest,Y).
 printList3(_,[],_).
 
 %Recursive list iteration with if-else clauses
-findElements(N,[Head|Rest]):-
-    Head==N,
+findElements(N,[H|Rest]):-
+    H==N,
     write('Found it! '),
     findElements(N,Rest).
-findElements(N,[Head|Rest]):-
-    Head\=N,
+findElements(N,[H|Rest]):-
+    H\=N,
     write('Nope '),
     findElements(N,Rest).
 findElements(_,[]).
 
 %Recursive list iteration with if-else clauses
-biggerThan(N,[Head|Rest]):-
-    Head>N,
-    write(Head),write(' is bigger than '),write(N),nl,
+biggerThan(N,[X|Rest]):-
+    X>N,
+    write(X),write(' is bigger than '),write(N),nl,
     biggerThan(N,Rest).
-biggerThan(N,[Head|Rest]):-
-    Head=<N,
-    write(Head),write(' is not bigger than '),write(N),nl,
+biggerThan(N,[X|Rest]):-
+    X=<N,
+    write(X),write(' is not bigger than '),write(N),nl,
     biggerThan(N,Rest).
 biggerThan(_,[]).
 

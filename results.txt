@@ -1,0 +1,152 @@
+
+displayStatus :-
+    status(Person, Status),
+    write(Person),
+    write(' is '),
+    write(Status),
+    nl,
+    fail.
+displayStatus.
+
+displayStatus(){
+     for((Person,Status):status(Person,Status)){
+          print_line(Person," is ",Status)
+     }
+}
+
+For each Person and Status that satisfy status(Person,Status), displayStatus prints "Person is Status" on the console and breaks line. 
+
+
+displayStudents :-
+    university(U),
+    department(U, D),
+    student(D, S),
+    write(S),
+    nl,
+    fail.
+displayStudents.
+
+displayStudents(){
+     for(U:university(U)){
+          for(D:department(U,D)){
+               for(S:student(D,S)){
+                    print_line(S)
+               }
+          }
+     }
+}
+
+For each U that satisfies university(U), for each D that satisfies department(U,D) and for each S that satisfies student(D,S), displayStudents prints "S" on the console and breaks line. 
+
+
+displayPeople :-
+    gender(Person, female),
+    write(Person),
+    nl,
+    fail.
+displayPeople :-
+    gender(Person, male),
+    write(Person),
+    nl,
+    fail.
+displayPeople.
+
+displayPeople(){
+     for(Person:gender(Person,female)){
+          print_line(Person)
+     }
+     for(Person:gender(Person,male)){
+          print_line(Person)
+     }
+}
+
+For each Person that satisfies gender(Person,female), displayPeople prints "Person" on the console and breaks line. Then, for each Person that satisfies gender(Person,male), displayPeople prints "Person" on the console and breaks line. 
+
+
+inputPassword :-
+    repeat,
+    write('Insert password:'),
+    nl,
+    read(Password),
+    processPassword(Password).
+
+inputPassword(){
+     do{
+          print_line("Insert password:")
+          read(Password)
+     } while(not_successful(processPassword(Password)))
+}
+
+inputPassword prints "Insert password:" on the console, breaks line and reads Password from user input. If inputPassword manages to successfully process Password, it stops, otherwise, it repeats the same process. 
+
+
+inputCredentials :-
+    repeat,
+    write('Username:'),
+    nl,
+    read(Name),
+    name(Name),
+    write('Password:'),
+    nl,
+    read(P),
+    password(Name, P),
+    write('Credentials accepted').
+
+inputCredentials(){
+     do{
+          do{
+               print_line("Username:")
+               read(Name)
+          } while(not(name(Name)))
+          print_line("Password:")
+          read(P)
+     } while(not(password(Name,P)))
+     print("Credentials accepted")
+}
+
+inputCredentials prints "Username:" on the console, breaks line and reads Name from user input. If Name exists, it stops, otherwise it repeats the same process. Then, it prints "Password:" on the console, breaks line and reads password P from user input. If password Name, P exists, it stops, otherwise it repeats the same process. Finally, it prints "Credentials accepted" on the console. 
+
+
+printList([X|Rest]) :-
+    write(X),
+    nl,
+    printList(Rest).
+printList([]).
+
+printList(list){
+     for(X in list){
+          print_line(X)
+     }
+}
+
+printList receives list. For each X that belongs to list, printList prints "X" on the console and breaks line. 
+
+
+biggerThan(N, [X|Rest]) :-
+    X>N,
+    write(X),
+    write(' is bigger than '),
+    write(N),
+    nl,
+    biggerThan(N, Rest).
+biggerThan(N, [X|Rest]) :-
+    X=<N,
+    write(X),
+    write(' is not bigger than '),
+    write(N),
+    nl,
+    biggerThan(N, Rest).
+biggerThan(_, []).
+
+biggerThan(N,list){
+     for(X in list){
+          if(X>N){
+               print_line(X," is bigger than ",N)
+          }
+          else{
+               print_line(X," is not bigger than ",N)
+          }
+     }
+}
+
+biggerThan receives N and list. For each X that belongs to list, if X is bigger than N then biggerThan prints "X is bigger than N" on the console and breaks line, otherwise it prints "X is not bigger than N" on the console and breaks line. 
