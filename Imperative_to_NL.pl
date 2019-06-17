@@ -59,7 +59,7 @@ prolog_to_nl_dev(Name/0):-
     nl,nl,
     write(Text),nl.
 prolog_to_nl_dev(Name/Arity):-
-    prolog_to_imperative_info(Name/Arity,Head,Body),
+    prolog_to_imperative(Name/Arity,Head,Body),
     nl,nl,
     write(body:Body),nl,
     process_header(Head,Header),
@@ -346,9 +346,10 @@ process_conjunctions([List|Rest],[Processed|ProcessedRest]):-
 process_conjunctions([],[]).
 
 %Process conjunction tags in phrase to unite text excerpts coherently
-process_conjunctions([X,tag:conjunction,tag:comma|Rest],List,[Pretty,NewX|Processed]):-
+process_conjunctions([X,tag:conjunction,tag:comma|Rest],List,[Pretty|Processed]):-
     atom_concat(X,',',NewX),
-    pretty_enumeration(List,Pretty),
+    append(List,[NewX],NewList),
+    pretty_enumeration(NewList,Pretty),
     process_conjunctions(Rest,[],Processed).
 process_conjunctions([X,tag:conjunction,tag:comma|Rest],[],[NewX|Processed]):-
     atom_concat(X,',',NewX),
