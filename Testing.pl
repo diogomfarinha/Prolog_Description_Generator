@@ -41,12 +41,14 @@ test2:-
 
 %Results chosen for peer evaluation
 results:-
-    prolog_to_nl(displayStatus/0),
-    prolog_to_nl(displayStudents/0),
-    prolog_to_nl(displayPeople/0),
-    prolog_to_nl(inputPassword/0),
-    prolog_to_nl(inputCredentials/0),
-    prolog_to_nl(printList/1),
-    prolog_to_nl(biggerThan/2).
+    tell('results.txt'),
+    prolog_to_nl(displayStatus/0),nl,
+    prolog_to_nl(displayStudents/0),nl,
+    prolog_to_nl(displayPeople/0),nl,
+    prolog_to_nl(inputPassword/0),nl,
+    prolog_to_nl(inputCredentials/0),nl,
+    prolog_to_nl(printList/1),nl,
+    prolog_to_nl(biggerThan/2),
+    told.
 
 
