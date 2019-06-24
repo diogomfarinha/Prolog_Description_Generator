@@ -76,9 +76,11 @@ predicate_has_more_solutions(Pred):-
     is_fact(Pred).
 predicate_has_more_solutions(member(X,List)):-
     var(X),
+    is_list(List),
     length(List,Length),
     Length>1.
 predicate_has_more_solutions(member(X,List)):-
+    is_list(List),
     count_member(X,List,Count),
     Count>1.
 predicate_has_more_solutions(Pred):-
@@ -92,9 +94,12 @@ predicate_has_more_solutions(Pred,_):-
     is_fact(Pred).
 predicate_has_more_solutions(member(X,List),_):-
     var(X),
+    is_list(List),
     length(List,Length),
     Length>1.
 predicate_has_more_solutions(member(X,List),_):-
+    is_list(List),
+    atomic(X),
     count_member(X,List,Count),
     Count>1.
 predicate_has_more_solutions(Pred,List_of_Predicates):-

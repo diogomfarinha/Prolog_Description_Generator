@@ -158,7 +158,7 @@ process_predicate_head(Pred,NewPred):-
     retract(recursion_argument(Index)),
     retractall(recursion_argument(_)),
     Pred=..[Name|Args],
-    switch_index(Index,Args,list,NewArgs),
+    switch_index(Index,Args,'List',NewArgs),
     NewPred=..[Name|NewArgs].
 
 %Processes coherence in for loops in list
@@ -210,7 +210,7 @@ pattern_to_text([],[]).
 
 %Describe a loop for iterating through a list
 iter_loop_description(Element,for(Text)):-
-    atom_concat(Element,' in list',Text).
+    atom_concat(Element,' in List',Text).
 
 %Describe a for loop with arguments and predicate
 for_loop_description([X],Predicate,for(X:Predicate)).
