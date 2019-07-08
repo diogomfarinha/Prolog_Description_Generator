@@ -76,7 +76,7 @@ predicate_does_not_have_more_solutions(age(_,_)).
 predicate_has_more_solutions(Pred):-
     predicate_has_more_solutions(Pred,[]).
 
-%Predicate has more than one solution. Contains list of iterated predicates to prevent infite loops with recursive predicates
+%Predicate has more than one solution. Contains list of iterated predicates to prevent infinite loops with recursive predicates
 predicate_has_more_solutions(Pred,_):-
     predicate_does_not_have_more_solutions(Pred),!,fail.
 predicate_has_more_solutions(Pred,_):-
@@ -157,7 +157,7 @@ predicate_cannot_fail(nl).
 predicate_can_fail(Pred):-
     predicate_can_fail(Pred,[]).
 
-%Predicate can fail when called. Contains list of iterated predicates to prevent infite loops with recursive predicates
+%Predicate can fail when called. Contains list of iterated predicates to prevent infinite loops with recursive predicates
 predicate_can_fail(Pred,_):-
     predicate_cannot_fail(Pred),!,fail.
 predicate_can_fail(Pred,_):-
