@@ -69,46 +69,25 @@ assert_if_not_exists(predicate_instantiated(X)):-
     assert(predicate_instantiated(X)).
 assert_if_not_exists(_).
 
+%Predicate does not have more than one solution
+predicate_does_not_have_more_solutions(age(_,_)).
+
 %Predicate has more than one solution
-predicate_has_more_solutions(age(_,_)):- %%%%%%%%%%%%%%%% TESTING PURPOSES ONLY REMOVE LATER
-    !,fail.
 predicate_has_more_solutions(Pred):-
-    is_fact(Pred).
-predicate_has_more_solutions(member(X,List)):-
-    var(X),
-    is_list(List),
-    length(List,Length),
-    Length>1.
-predicate_has_more_solutions(member(X,List)):-
-    is_list(List),
-    count_member(X,List,Count),
-    Count>1.
-predicate_has_more_solutions(Pred):-
-    \+predicate_property(Pred,built_in),
-    \+predicate_property(Pred,imported_from(lists)),
-    get_all_rules(Pred,List_of_Rules),
-    list_has_more_solutions(List_of_Rules,[Pred]),!.
+    predicate_has_more_solutions(Pred,[]).
 
 %Predicate has more than one solution. Contains list of iterated predicates to prevent infite loops with recursive predicates
 predicate_has_more_solutions(Pred,_):-
+    predicate_does_not_have_more_solutions(Pred),!,fail.
+predicate_has_more_solutions(Pred,_):-
     is_fact(Pred).
-predicate_has_more_solutions(member(X,List),_):-
-    var(X),
-    is_list(List),
-    length(List,Length),
-    Length>1.
-predicate_has_more_solutions(member(X,List),_):-
-    is_list(List),
-    atomic(X),
-    count_member(X,List,Count),
-    Count>1.
+predicate_has_more_solutions(member(_,_),_).
 predicate_has_more_solutions(Pred,List_of_Predicates):-
     \+predicate_property(Pred,built_in),
     \+predicate_property(Pred,imported_from(lists)),
     \+member(Pred,List_of_Predicates),
     get_all_rules(Pred,List_of_Rules),
-    append(List_of_Predicates,[Pred],New_List_of_Predicates),
-    list_has_more_solutions(List_of_Rules,New_List_of_Predicates),!.
+    list_has_more_solutions(List_of_Rules,[Pred|List_of_Predicates]),!.
 
 %Rule contains a predicate that has more than one solution
 rule_has_more_solutions([Head|_],List_of_Predicates):-
@@ -170,35 +149,30 @@ is_math(_>=_).
 %Predicate is negated
 is_negation(\+_).
 
+%Predicate cannot fail when called
+predicate_cannot_fail(write(_)).
+predicate_cannot_fail(nl).
+
 %Predicate can fail when called
 predicate_can_fail(Pred):-
-    is_math(Pred).
-predicate_can_fail(Pred):-
-    is_negation(Pred).
-predicate_can_fail(Pred):-
-    is_fact(Pred).
-predicate_can_fail(member(_,_)).
-predicate_can_fail(Pred):-
-    \+predicate_property(Pred,built_in),
-    \+predicate_property(Pred,imported_from(lists)),
-    get_all_rules(Pred,List_of_Rules),
-    list_can_fail(List_of_Rules,[Pred]),!.
+    predicate_can_fail(Pred,[]).
 
 %Predicate can fail when called. Contains list of iterated predicates to prevent infite loops with recursive predicates
 predicate_can_fail(Pred,_):-
+    predicate_cannot_fail(Pred),!,fail.
+predicate_can_fail(Pred,_):-
     is_math(Pred).
 predicate_can_fail(Pred,_):-
     is_negation(Pred).
 predicate_can_fail(Pred,_):-
-    is_fact(Pred).
-predicate_can_fail(member(_,_),_).
+    is_fact(Pred). 
+predicate_can_fail(Pred,_):-
+    predicate_property(Pred,imported_from(lists)).
 predicate_can_fail(Pred,List_of_Predicates):-
     \+predicate_property(Pred,built_in),
-    \+predicate_property(Pred,imported_from(lists)),
     \+member(Pred,List_of_Predicates),
     get_all_rules(Pred,List_of_Rules),
-    append(List_of_Predicates,[Pred],New_List_of_Predicates),
-    list_can_fail(List_of_Rules,New_List_of_Predicates),!.
+    list_can_fail(List_of_Rules,[Pred|List_of_Predicates]),!.
 
 %Rule contains a predicate that can fail
 rule_can_fail([Head|_],List_of_Predicates):-
