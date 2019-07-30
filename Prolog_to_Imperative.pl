@@ -66,7 +66,7 @@ get_patterns([],[]).
 
 %Identifies and tags Prolog programming patterns
 %fail pattern
-pattern(Predicate,[Pred|Body],[tag:for_loop,Args,Pred|Rest]):-
+pattern(Predicate,[Pred|Body],[tag:for_loop(Args,Pred)|Rest]):-
     predicate_has_more_solutions(Pred),
     list_ends_with(Body,fail),
     Pred=..[_|Args],
@@ -89,10 +89,10 @@ pattern(Predicate,[Pred|Body],[tag:iter_loop(Head)|Rest]):-
     assert(recursion_argument(Index)),
     pattern(Predicate,Body,Rest).
 %if pattern- incomplete, still needs work, only detects math operations
-pattern(Predicate,[Pred|Body],[tag:if_clause,Pred|Rest]):-
+pattern(Predicate,[Pred|Body],[tag:if_clause(Pred)|Rest]):-
     is_math(Pred),
     pattern(Predicate,Body,Rest).
-pattern(Predicate,[\+Pred|Body],[tag:if_not,Pred|Rest]):-
+pattern(Predicate,[\+Pred|Body],[tag:if_not(Pred)|Rest]):-
     pattern(Predicate,Body,Rest).
 %no patttern
 pattern(_,[fail|_],[]).
@@ -107,7 +107,7 @@ pattern(Predicate,[Pred|Body],[Pred|Rest]):-
 pattern(_,[],[]).
 
 %Identifies and tags which predicates from the list can fail
-predicates_can_fail([Pred|Body],[tag:canfail,Pred|Rest]):-
+predicates_can_fail([Pred|Body],[tag:canfail(Pred)|Rest]):-
     predicate_can_fail(Pred),
     predicates_can_fail(Body,Rest).
 predicates_can_fail([Pred|Body],[Pred|Rest]):-
@@ -171,7 +171,7 @@ process_loop_coherence([],[]).
 %Ex: for(U:university(U)){for(S:student(U,S)) instead of for(U:university(U)){for((U,S):student(U,S))
 coherent_loops(List,Coherent):-
     coherent_loops(List,Coherent,[]).
-coherent_loops([tag:for_loop,List|Rest],[tag:for_loop,Subtract|CoherentRest],Variables):-
+coherent_loops([tag:for_loop(List,Pred)|Rest],[tag:for_loop(Subtract,Pred)|CoherentRest],Variables):-
     intersection(List,Variables,Intersection),
     subtract(List,Intersection,Subtract),
     append(Intersection,Subtract,Conjunction),
@@ -190,17 +190,17 @@ patterns_to_text([],[]).
 pattern_to_text([tag:iter_loop(Elements)|Rest],[Text,tag:indent|TextRest]):-
     iter_loop_description(Elements,Text),
     pattern_to_text(Rest,TextRest).
-pattern_to_text([tag:for_loop,Args,Pred|Rest],[Text,tag:indent|TextRest]):-
+pattern_to_text([tag:for_loop(Args,Pred)|Rest],[Text,tag:indent|TextRest]):-
     for_loop_description(Args,Pred,Text),
     pattern_to_text(Rest,TextRest).
-pattern_to_text([tag:if_clause,Condition|Rest],[Text,tag:indent|TextRest]):-
+pattern_to_text([tag:if_clause(Condition)|Rest],[Text,tag:indent|TextRest]):-
     if_clause_description(Condition,Text),
     pattern_to_text(Rest,TextRest).
-pattern_to_text([tag:if_not,Condition|Rest],[Text,tag:indent|TextRest]):-
+pattern_to_text([tag:if_not(Condition)|Rest],[Text,tag:indent|TextRest]):-
     if_clause_description(not,Condition,Text),
     pattern_to_text(Rest,TextRest).
 pattern_to_text([tag:do_while|Rest],Text):-
-    count_member(tag:canfail,Rest,Count),!,
+    count_member(tag:canfail(_),Rest,Count),!,write(Count),nl,
     do_while_description(Count,DoText),
     repeat_pattern_to_text(Rest,TextRest),
     append(DoText,TextRest,Text).
@@ -233,10 +233,10 @@ do_while_description(Count,[do,tag:indent|Rest]):-
     do_while_description(CountDown,Rest).
 
 %Process predicates in a repeat pattern to text
-repeat_pattern_to_text([tag:canfail,Pred|Rest],[tag:write_unindent,while(not(Pred))|TextRest]):-
+repeat_pattern_to_text([tag:canfail(Pred)|Rest],[tag:write_unindent,while(not(Pred))|TextRest]):-
     is_fact(Pred),
     repeat_pattern_to_text(Rest,TextRest).
-repeat_pattern_to_text([tag:canfail,Pred|Rest],[tag:write_unindent,while(not_successful(Pred))|TextRest]):-
+repeat_pattern_to_text([tag:canfail(Pred)|Rest],[tag:write_unindent,while(not_successful(Pred))|TextRest]):-
     repeat_pattern_to_text(Rest,TextRest).
 repeat_pattern_to_text([Pred|Rest],[Pred|TextRest]):-
     repeat_pattern_to_text(Rest,TextRest).

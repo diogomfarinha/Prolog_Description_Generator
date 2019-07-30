@@ -1,7 +1,16 @@
 :- ensure_loaded('Prolog_to_Imperative.pl').
 :- ensure_loaded('Vocabulary.pl').
 
+%Natural language custom descriptions of procedures
+%custom_description(PredicateName,Tense,Description).
+
 %Natural language descriptions of procedures
+%Natural langauge descriptions of procedures with custom user inputted descriptions
+%procedure_description(Predicate,Tense,Description):-
+%    Predicate=..[Name|Args],
+%    custom_description(Name,Tense,Desc),
+%    pretty_enumeration(Args,PrettyArgs),
+%    atom_concat(Desc,PrettyArgs,Description).
 %Prepared descriptions in both present tense and infinitive
 procedure_description(Predicate,Tense,Desc):-
     Predicate=..[Name|Args],

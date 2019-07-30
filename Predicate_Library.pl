@@ -33,6 +33,9 @@ is_fact(Pred):-
     predicate_property(Pred,number_of_rules(0)).
 
 %Counts occurences of element in list
+count_member(tag:canfail(_),[tag:canfail(_)|Rest],Count_Up):- %Needs specific implementation, since Prolog instantiates the variable
+    count_member(tag:canfail(_),Rest,Count),
+    Count_Up is Count+1.
 count_member(Element,[Element|Rest],Count_Up):-
     count_member(Element,Rest,Count),
     Count_Up is Count+1.

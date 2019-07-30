@@ -140,22 +140,21 @@ process_snippet([for(Iteration)|Rest],[Desc,tag:subject|DescRest]):-
     process_snippet(Rest,DescRest).
 process_snippet([do|Rest],[tag:subject|DescRest]):-
     process_snippet(Rest,DescRest).
-process_snippet([while(not(Pred))|Rest],[tag:end_of_phrase,'if',Desc,tag:end_of_phrase|DescRest]):-
+process_snippet([while(not(Pred))|Rest],['repeats this process until',tag:conjunction,Desc,tag:end_of_phrase|DescRest]):-
     Pred=..[Name|[Arg]],
     string_lower(Arg,Name),
-    atom_concat(Arg,' exists, it stops, otherwise it repeats the same process',Desc),
+    atom_concat(Arg,' is true',Desc),
     process_snippet(Rest,DescRest).
-process_snippet([while(not(Pred))|Rest],[tag:end_of_phrase,'if',Desc,tag:end_of_phrase|DescRest]):-
+process_snippet([while(not(Pred))|Rest],['repeats this process until',tag:conjunction,Desc,tag:end_of_phrase|DescRest]):-
     Pred=..[Name|Args],
     atomic_list_concat(Args,', ', AtomArgs),
     atom_concat(Name,' ',Atom1),
     atom_concat(Atom1,AtomArgs,Atom2),
-    atom_concat(Atom2,' exists, it stops, otherwise it repeats the same process',Desc),
+    atom_concat(Atom2,' is true',Desc),
     process_snippet(Rest,DescRest).
-process_snippet([while(not_successful(Pred))|Rest],[tag:end_of_phrase,'if',tag:subject,Desc,tag:end_of_phrase|DescRest]):-
+process_snippet([while(not_successful(Pred))|Rest],['repeats this process until',tag:conjunction,Desc,tag:end_of_phrase|DescRest]):-
     procedure_description(Pred,infinitive,ProdDesc),
-    atom_concat('manages to successfully ',ProdDesc,Atom1),
-    atom_concat(Atom1,', it stops, otherwise, it repeats the same process',Desc),
+    atom_concat(ProdDesc,' is successful',Desc),
     process_snippet(Rest,DescRest).
 process_snippet([if(Condition)|Rest],[Desc,tag:subject|DescRest]):-
     condition_description(Condition,ProcessedCon),
