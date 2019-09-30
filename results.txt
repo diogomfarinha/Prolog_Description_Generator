@@ -52,15 +52,16 @@ displayPeople :-
 displayPeople.
 
 displayPeople(){
-     for(Person:gender(Person,female)){
+     for((Person,female):gender(Person,female)){
           print_line(Person)
      }
-     for(Person:gender(Person,male)){
+     for((Person,male):gender(Person,male)){
           print_line(Person)
      }
 }
 
-For each Person that satisfies gender(Person,female), displayPeople prints "Person" on the console and breaks line. Then, for each Person that satisfies gender(Person,male), displayPeople prints "Person" on the console and breaks line. 
+For each Person and female that satisfy gender(Person,female), displayPeople prints "Person" on the console and breaks line. Then, for each Person and male that satisfy gender(Person,male), displayPeople prints "Person" on the console and breaks line. 
+
 
 
 inputPassword :-
@@ -77,7 +78,8 @@ inputPassword(){
      } while(not_successful(processPassword(Password)))
 }
 
-inputPassword prints "Insert password:" on the console, breaks line and reads Password from user input. If inputPassword manages to successfully process Password, it stops, otherwise, it repeats the same process. 
+inputPassword prints "Insert password:" on the console, breaks line, reads Password from user input and repeats this process until process Password is successful. 
+
 
 
 inputCredentials :-
@@ -104,7 +106,7 @@ inputCredentials(){
      print("Credentials accepted")
 }
 
-inputCredentials prints "Username:" on the console, breaks line and reads Name from user input. If Name exists, it stops, otherwise it repeats the same process. Then, it prints "Password:" on the console, breaks line and reads password P from user input. If password Name, P exists, it stops, otherwise it repeats the same process. Finally, it prints "Credentials accepted" on the console. 
+inputCredentials prints "Username:" on the console, breaks line, reads Name from user input and repeats this process until Name is true. Then, it prints "Password:" on the console, breaks line, reads password P from user input and repeats this process until password Name, P is true. Finally, it prints "Credentials accepted" on the console. 
 
 
 printList([X|Rest]) :-
@@ -113,13 +115,13 @@ printList([X|Rest]) :-
     printList(Rest).
 printList([]).
 
-printList(list){
-     for(X in list){
+printList(List){
+     for(X in List){
           print_line(X)
      }
 }
 
-printList receives list. For each X that belongs to list, printList prints "X" on the console and breaks line. 
+printList receives List. For each X that belongs to List, printList prints "X" on the console and breaks line. 
 
 
 biggerThan(N, [X|Rest]) :-
@@ -138,8 +140,8 @@ biggerThan(N, [X|Rest]) :-
     biggerThan(N, Rest).
 biggerThan(_, []).
 
-biggerThan(N,list){
-     for(X in list){
+biggerThan(N,List){
+     for(X in List){
           if(X>N){
                print_line(X," is bigger than ",N)
           }
@@ -149,4 +151,4 @@ biggerThan(N,list){
      }
 }
 
-biggerThan receives N and list. For each X that belongs to list, if X is bigger than N then biggerThan prints "X is bigger than N" on the console and breaks line, otherwise it prints "X is not bigger than N" on the console and breaks line. 
+biggerThan receives N and List. For each X that belongs to List, if X is bigger than N then biggerThan prints "X is bigger than N" on the console and breaks line, otherwise it prints "X is not bigger than N" on the console and breaks line. 

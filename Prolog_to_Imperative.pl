@@ -200,7 +200,7 @@ pattern_to_text([tag:if_not(Condition)|Rest],[Text,tag:indent|TextRest]):-
     if_clause_description(not,Condition,Text),
     pattern_to_text(Rest,TextRest).
 pattern_to_text([tag:do_while|Rest],Text):-
-    count_member(tag:canfail(_),Rest,Count),!,write(Count),nl,
+    count_member(tag:canfail(_),Rest,Count),!,nl,
     do_while_description(Count,DoText),
     repeat_pattern_to_text(Rest,TextRest),
     append(DoText,TextRest,Text).
